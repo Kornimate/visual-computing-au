@@ -2,11 +2,12 @@
 #include <opencv2/features2d.hpp>
 #include <opencv2/imgproc.hpp>
 #include <iostream>
+#include <tuple>
 
 using namespace cv;
 using namespace std;
 
-static void runFeatureDetection(const Mat& img1, const Mat& img2, Ptr<Feature2D> detector, string name, NormTypes norm) {
+static tuple<vector<DMatch>, vector<KeyPoint>, vector<KeyPoint>> detectAndMatch(const Mat& img1, const Mat& img2, Ptr<Feature2D> detector, string name, NormTypes norm, bool drawMatchesAsWindow = false) {
 
 	vector<KeyPoint> kp1, kp2;
 	Mat desc1, desc2;
@@ -23,12 +24,53 @@ static void runFeatureDetection(const Mat& img1, const Mat& img2, Ptr<Feature2D>
 	long t0 = getTickCount();
 
 	matcher.match(desc1, desc2, matches);
-	
+
 	long t1 = getTickCount();
 
 	double elapsed_ms = (t1 - t0) * 1000.0 / getTickFrequency();
 
 	cout << name << " Matching time: " << elapsed_ms << " ms" << endl;
+
+	//matches
+	if (drawMatchesAsWindow)
+	{
+		Mat img_matches;
+		drawMatches(img1, kp1, img2, kp2, matches, img_matches);
+		imshow(name + " Matches", img_matches);
+	}
+
+	return make_tuple(matches, kp1, kp2);
+}
+
+static void stitchUsingRANSAC(const Mat& img1, const Mat& img2, vector<DMatch> matches, vector<KeyPoint> kp1, vector<KeyPoint> kp2, double ransacThresh) {
+
+	vector<Point2f> pts1, pts2;
+	for (auto& m : matches) {
+		pts1.push_back(kp1[m.queryIdx].pt);
+		pts2.push_back(kp2[m.trainIdx].pt);
+	}
+
+	Mat inlierMask;
+	TickMeter tm;
+
+	tm.start();
+
+	Mat H = findHomography(pts1, pts2, RANSAC, ransacThresh, inlierMask);
+
+	tm.stop();
+
+	int inliers = countNonZero(inlierMask);
+	cout << "RANSAC threshold = " << ransacThresh << ", inliers = " << inliers << ", time = " << tm.getTimeMilli() << " ms" << endl;
+
+	Mat result;
+	warpPerspective(img1, result, H, Size(img1.cols + img2.cols, max(img1.rows, img2.rows)));
+	Mat half(result, Rect(0, 0, img2.cols, img2.rows));
+	img2.copyTo(half);
+
+	imshow("Stitched Image", result);
+}
+
+static void runFeatureDetection(vector<DMatch> matches, string name) {
 
 	vector<float> distances;
 
@@ -53,24 +95,19 @@ static void runFeatureDetection(const Mat& img1, const Mat& img2, Ptr<Feature2D>
 
 	for (int i = 1; i < histSize; i++) {
 		line(histImage,
-			 Point(bin_w * (i - 1), hist_h - cvRound(hist.at<float>(i - 1))),
-			 Point(bin_w * (i - 1), hist_h - cvRound(hist.at<float>(0))),
-			 Scalar(0, 0, 255), 2, 8, 0);
+			Point(bin_w * (i - 1), hist_h - cvRound(hist.at<float>(i - 1))),
+			Point(bin_w * (i - 1), hist_h - cvRound(hist.at<float>(0))),
+			Scalar(0, 0, 255), 2, 8, 0);
 	}
 
 	imshow(name + " Match Distance Histogram", histImage);
-
-	//matches
-	Mat img_matches;
-	drawMatches(img1, kp1, img2, kp2, matches, img_matches);
-	imshow(name + " Matches", img_matches);
 }
 
 int main() {
 
 	//import images
-	Mat img1 = imread("./ImageSource/outdoor-s1-1.jpg", IMREAD_GRAYSCALE);
-	Mat img2 = imread("./ImageSource/outdoor-s1-2.jpg", IMREAD_GRAYSCALE);
+	Mat img1 = imread("./ImageSource/outdoor-s3-2.jpg", IMREAD_GRAYSCALE);
+	Mat img2 = imread("./ImageSource/outdoor-s3-3.jpg", IMREAD_GRAYSCALE);
 
 	//check if import is successful
 	if (img1.empty() || img2.empty()) {
@@ -85,13 +122,36 @@ int main() {
 	Mat smallImg2;
 	resize(img2, smallImg2, Size(), 0.15, 0.15);
 
-	// SIFT
-	Ptr<Feature2D> sift = SIFT::create();
-	runFeatureDetection(smallImg1, smallImg2, sift, "[SIFT]", NORM_L2);
+	//Matches
 
-	// AKAZE
-	Ptr<Feature2D> akaze = AKAZE::create();
-	runFeatureDetection(smallImg1, smallImg2, akaze, "[AKAZE]", NORM_HAMMING);
+	Ptr<Feature2D> sift = SIFT::create();
+	string siftName = "[SIFT]";
+	vector<DMatch> matchesSift;
+	vector<KeyPoint> kp1;
+	vector<KeyPoint> kp2;
+
+	tie(matchesSift, kp1, kp2) = detectAndMatch(smallImg1, smallImg2, sift, siftName, NORM_L2); //add true param to show matches
+
+	//Ptr<Feature2D> akaze = AKAZE::create();
+	//string akazeName = "[AKAZE]";
+	//vector<DMatch> matchesAkaze;
+
+	//tie(matchesAkaze, ignore, ignore) = detectAndMatch(smallImg1, smallImg2, akaze, akazeName, NORM_HAMMING); //add true param to show matches
+
+	//// SIFT
+	//runFeatureDetection(matchesSift, siftName);
+
+	//// AKAZE
+	//runFeatureDetection(matchesAkaze, akazeName);
+
+	vector<double> thresholds = { 1.0, 3.0, 5.0, 10.0 };
+
+	for (double t : thresholds) {
+
+		stitchUsingRANSAC(smallImg1, smallImg2, matchesSift, kp1, kp2, t);
+		waitKey(0); // pause to observe visual quality
+	}
+
 
 	waitKey(0);
 	return 0;
