@@ -173,6 +173,8 @@ int main() {
 	// AKAZE
 	useFeatureDetection(matchesAkaze, akazeName);
 
+	waitKey(0);
+
 	// Homography and warping
 	Mat resultOfWarping;
 	vector<double> thresholds = { 1.0, 3.0, 5.0, 10.0 };
