@@ -7,6 +7,34 @@
 using namespace cv;
 using namespace std;
 
+Mat overlayBlend(const Mat& warped, const Mat& img2) {
+	Mat result = warped.clone();
+	for (int y = 0; y < img2.rows; y++) {
+		for (int x = 0; x < img2.cols; x++) {
+			if (img2.at<Vec3b>(y, x) != Vec3b(0, 0, 0)) { // non-black pixels
+				result.at<Vec3b>(y, x) = img2.at<Vec3b>(y, x);
+			}
+		}
+	}
+	return result;
+}
+
+static Mat featherBlend(const Mat& warped, const Mat& img2) {
+	Mat result = warped.clone();
+	for (int y = 0; y < img2.rows; y++) {
+		for (int x = 0; x < img2.cols; x++) {
+			Vec3b c1 = warped.at<Vec3b>(y, x);
+			Vec3b c2 = img2.at<Vec3b>(y, x);
+			if (c2 != Vec3b(0, 0, 0)) { // overlapping
+				// weighted average
+				for (int i = 0; i < 3; i++)
+					result.at<Vec3b>(y, x)[i] = uchar(0.5 * c1[i] + 0.5 * c2[i]);
+			}
+		}
+	}
+	return result;
+}
+
 static tuple<vector<DMatch>, vector<KeyPoint>, vector<KeyPoint>> detectAndMatch(const Mat& img1, const Mat& img2, Ptr<Feature2D> detector, string name, NormTypes norm, bool drawMatchesAsWindow = false) {
 
 	vector<KeyPoint> kp1, kp2;
@@ -31,7 +59,7 @@ static tuple<vector<DMatch>, vector<KeyPoint>, vector<KeyPoint>> detectAndMatch(
 
 	cout << name << " Matching time: " << elapsed_ms << " ms" << endl;
 
-	//matches
+	// Draw matches
 	if (drawMatchesAsWindow)
 	{
 		Mat img_matches;
@@ -42,7 +70,7 @@ static tuple<vector<DMatch>, vector<KeyPoint>, vector<KeyPoint>> detectAndMatch(
 	return make_tuple(matches, kp1, kp2);
 }
 
-static void stitchUsingRANSAC(const Mat& img1, const Mat& img2, vector<DMatch> matches, vector<KeyPoint> kp1, vector<KeyPoint> kp2, double ransacThresh) {
+static Mat stitchUsingRANSAC(const Mat& img1, const Mat& img2, vector<DMatch> matches, vector<KeyPoint> kp1, vector<KeyPoint> kp2, double ransacThresh) {
 
 	vector<Point2f> pts1, pts2;
 	for (auto& m : matches) {
@@ -62,15 +90,17 @@ static void stitchUsingRANSAC(const Mat& img1, const Mat& img2, vector<DMatch> m
 	int inliers = countNonZero(inlierMask);
 	cout << "RANSAC threshold = " << ransacThresh << ", inliers = " << inliers << ", time = " << tm.getTimeMilli() << " ms" << endl;
 
-	Mat result;
-	warpPerspective(img1, result, H, Size(img1.cols + img2.cols, max(img1.rows, img2.rows)));
-	Mat half(result, Rect(0, 0, img2.cols, img2.rows));
-	img2.copyTo(half);
+	Mat warped;
+	warpPerspective(img1, warped, H, Size(img1.cols + img2.cols, max(img1.rows, img2.rows)));
+	Mat result(warped, Rect(0, 0, img2.cols, img2.rows));
+	img2.copyTo(result);
 
-	imshow("Stitched Image", result);
+	imshow("Stitched Image", warped);
+
+	return warped;
 }
 
-static void runFeatureDetection(vector<DMatch> matches, string name) {
+static void useFeatureDetection(vector<DMatch> matches, string name) {
 
 	vector<float> distances;
 
@@ -105,25 +135,24 @@ static void runFeatureDetection(vector<DMatch> matches, string name) {
 
 int main() {
 
-	//import images
-	Mat img1 = imread("./ImageSource/outdoor-s3-2.jpg", IMREAD_GRAYSCALE);
-	Mat img2 = imread("./ImageSource/outdoor-s3-3.jpg", IMREAD_GRAYSCALE);
+	// Import images
+	Mat img1 = imread("./ImageSource/indoor-s1-1.jpg", IMREAD_COLOR_BGR);
+	Mat img2 = imread("./ImageSource/indoor-s1-2.jpg", IMREAD_COLOR_BGR);
 
-	//check if import is successful
+	// Check if import is successful
 	if (img1.empty() || img2.empty()) {
 		cout << "Error: Could not load images!" << endl;
 		return -1;
 	}
 
-	//smaller images for ability to show it and 
+	// Smaller images for ability to show it and 
 	Mat smallImg1;
 	resize(img1, smallImg1, Size(), 0.15, 0.15);
 
 	Mat smallImg2;
 	resize(img2, smallImg2, Size(), 0.15, 0.15);
 
-	//Matches
-
+	// Matches: SIFT and AKAZE
 	Ptr<Feature2D> sift = SIFT::create();
 	string siftName = "[SIFT]";
 	vector<DMatch> matchesSift;
@@ -132,28 +161,38 @@ int main() {
 
 	tie(matchesSift, kp1, kp2) = detectAndMatch(smallImg1, smallImg2, sift, siftName, NORM_L2); //add true param to show matches
 
-	//Ptr<Feature2D> akaze = AKAZE::create();
-	//string akazeName = "[AKAZE]";
-	//vector<DMatch> matchesAkaze;
+	// SIFT
+	useFeatureDetection(matchesSift, siftName);
 
-	//tie(matchesAkaze, ignore, ignore) = detectAndMatch(smallImg1, smallImg2, akaze, akazeName, NORM_HAMMING); //add true param to show matches
+	Ptr<Feature2D> akaze = AKAZE::create();
+	string akazeName = "[AKAZE]";
+	vector<DMatch> matchesAkaze;
 
-	//// SIFT
-	//runFeatureDetection(matchesSift, siftName);
+	tie(matchesAkaze, ignore, ignore) = detectAndMatch(smallImg1, smallImg2, akaze, akazeName, NORM_HAMMING); //add true param to show matches
 
-	//// AKAZE
-	//runFeatureDetection(matchesAkaze, akazeName);
+	// AKAZE
+	useFeatureDetection(matchesAkaze, akazeName);
 
+	// Homography and warping
+	Mat resultOfWarping;
 	vector<double> thresholds = { 1.0, 3.0, 5.0, 10.0 };
 
 	for (double t : thresholds) {
 
-		stitchUsingRANSAC(smallImg1, smallImg2, matchesSift, kp1, kp2, t);
+		Mat resultOfWarping = stitchUsingRANSAC(smallImg1, smallImg2, matchesSift, kp1, kp2, 10.0);
 		waitKey(0); // pause to observe visual quality
 	}
 
 
+
+	Mat overlayResult = overlayBlend(resultOfWarping, smallImg2);
+	imshow("Overlay Blend", overlayResult);
+
+	Mat featherResult = featherBlend(resultOfWarping, smallImg2);
+	imshow("Feathering Blend", featherResult);
+
 	waitKey(0);
+
 	return 0;
 }
 
