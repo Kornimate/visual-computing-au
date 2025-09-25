@@ -7,7 +7,7 @@
 using namespace cv;
 using namespace std;
 
-Mat overlayBlend(const Mat& warped, const Mat& img2) {
+static Mat overlayBlend(const Mat& warped, const Mat& img2) {
 	Mat result = warped.clone();
 	for (int y = 0; y < img2.rows; y++) {
 		for (int x = 0; x < img2.cols; x++) {
@@ -182,8 +182,6 @@ int main() {
 		Mat resultOfWarping = stitchUsingRANSAC(smallImg1, smallImg2, matchesSift, kp1, kp2, 10.0);
 		waitKey(0); // pause to observe visual quality
 	}
-
-
 
 	Mat overlayResult = overlayBlend(resultOfWarping, smallImg2);
 	imshow("Overlay Blend", overlayResult);
