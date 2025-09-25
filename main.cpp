@@ -1,6 +1,7 @@
 #include <opencv2/opencv.hpp>
 #include <opencv2/features2d.hpp>
 #include <opencv2/imgproc.hpp>
+#include <opencv2/core/utils/logger.hpp>
 #include <iostream>
 #include <tuple>
 
@@ -134,6 +135,8 @@ static void useFeatureDetection(vector<DMatch> matches, string name) {
 }
 
 int main() {
+	// Disable logging from OpenCV
+	cv::utils::logging::setLogLevel(cv::utils::logging::LOG_LEVEL_SILENT);
 
 	// Import images
 	Mat img1 = imread("./ImageSource/indoor-s1-1.jpg", IMREAD_COLOR_BGR);
