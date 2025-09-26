@@ -20,9 +20,9 @@ for df in dfs:
     counts.append(df["match distances"].count())
 
 plt.bar(list(map(lambda x: x[0] + " " + x[1], names)), counts)
+
 plt.title(f"Chart of matches")
 
-# Save the figure
 plt.savefig("histogram-of-matches.png")
 
 plt.show()

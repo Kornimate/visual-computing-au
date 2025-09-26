@@ -107,7 +107,7 @@ static Mat stitchUsingRANSAC(const Mat& img1, const Mat& img2, vector<DMatch> ma
 	Mat result(warped, Rect(0, 0, img2.cols, img2.rows));
 	img2.copyTo(result);
 
-	//imshow("Stitched Image", result);
+	imshow("Stitched Image", result);
 
 	return result;
 }
@@ -163,15 +163,15 @@ int main() {
 	// Disable logging from OpenCV
 	cv::utils::logging::setLogLevel(cv::utils::logging::LOG_LEVEL_SILENT);
 
-	// Import images
+	//// Import images
 	//Mat img1 = imread("./ImageSource/indoor-s1-1.jpg", IMREAD_COLOR_BGR);
 	//Mat img2 = imread("./ImageSource/indoor-s1-2.jpg", IMREAD_COLOR_BGR);
 
-	Mat img1 = imread("./ImageSource/indoor-s2-1.jpg", IMREAD_COLOR_BGR);
-	Mat img2 = imread("./ImageSource/indoor-s2-2.jpg", IMREAD_COLOR_BGR);
+	//Mat img1 = imread("./ImageSource/indoor-s2-1.jpg", IMREAD_COLOR_BGR);
+	//Mat img2 = imread("./ImageSource/indoor-s2-2.jpg", IMREAD_COLOR_BGR);
 	
-	//Mat img1 = imread("./ImageSource/outdoor-s3-2.jpg", IMREAD_COLOR_BGR);
-	//Mat img2 = imread("./ImageSource/outdoor-s3-3.jpg", IMREAD_COLOR_BGR);
+	Mat img1 = imread("./ImageSource/outdoor-s3-2.jpg", IMREAD_COLOR_BGR);
+	Mat img2 = imread("./ImageSource/outdoor-s3-3.jpg", IMREAD_COLOR_BGR);
 
 	// Check if import is successful
 	if (img1.empty() || img2.empty()) {
@@ -217,8 +217,7 @@ int main() {
 	for (double t : thresholds) {
 
 		resultOfWarping = stitchUsingRANSAC(smallImg1, smallImg2, matchesSift, kp1, kp2, t, siftName);
-		//resultOfWarping2 = stitchUsingRANSAC(smallImg1, smallImg2, matchesAkaze, kp1, kp2, t, akazeName);
-		waitKey(0); // pause to observe visual quality
+		waitKey(0);
 	}
 
 	//Mat overlayResult = overlayBlend(resultOfWarping, smallImg2);
@@ -227,7 +226,7 @@ int main() {
 	//Mat featherResult = featherBlend(resultOfWarping, smallImg2);
 	//imshow("Feathering Blend", featherResult);
 
-	//waitKey(0);
+	waitKey(0);
 
 	return 0;
 }
