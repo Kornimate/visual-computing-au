@@ -156,14 +156,14 @@ static void useFeatureDetection(vector<DMatch> matches, string name) {
 			Scalar(0, 0, 255), 2, 8, 0);
 	}
 
-	//imshow(name + " Match Distance Histogram", histImage);
+	imshow(name + " Match Distance Histogram", histImage);
 }
 
 int main() {
 	// Disable logging from OpenCV
 	cv::utils::logging::setLogLevel(cv::utils::logging::LOG_LEVEL_SILENT);
 
-	//// Import images
+	// Import images
 	Mat img1 = imread("./ImageSource/indoor-s1-1.jpg", IMREAD_COLOR_BGR);
 	Mat img2 = imread("./ImageSource/indoor-s1-2.jpg", IMREAD_COLOR_BGR);
 
@@ -207,17 +207,19 @@ int main() {
 	// AKAZE
 	useFeatureDetection(matchesAkaze, akazeName);
 
-	//waitKey(0);
+	waitKey(0);
 
-	//// Homography and warping
+	// Homography and warping
 	Mat resultOfWarping;
-	//Mat resultOfWarping2;
-	//vector<double> thresholds = { 1.0, 3.0, 5.0, 10.0 };
 
-	//for (double t : thresholds) {
+	vector<double> thresholds = { 1.0, 3.0, 5.0, 10.0 };
 
-	//	waitKey(0);
-	//}
+	for (double t : thresholds) {
+
+		resultOfWarping = stitchUsingRANSAC(smallImg1, smallImg2, matchesSift, kp1, kp2, t, siftName);
+		waitKey(0);
+	}
+
 	resultOfWarping = stitchUsingRANSAC(smallImg1, smallImg2, matchesSift, kp1, kp2, 5.0, siftName);
 
 	Mat overlayResult = overlayBlend(resultOfWarping, smallImg2);
