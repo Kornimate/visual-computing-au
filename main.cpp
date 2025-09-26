@@ -193,7 +193,7 @@ int main() {
 	vector<KeyPoint> kp1;
 	vector<KeyPoint> kp2;
 
-	tie(matchesSift, kp1, kp2) = detectAndMatch(smallImg1, smallImg2, sift, siftName, NORM_L2); //add true param to show matches
+	tie(matchesSift, kp1, kp2) = detectAndMatch(smallImg1, smallImg2, sift, siftName, NORM_L2, true); //add true param to show matches
 
 	// SIFT
 	useFeatureDetection(matchesSift, siftName);
@@ -202,7 +202,7 @@ int main() {
 	string akazeName = "[AKAZE]";
 	vector<DMatch> matchesAkaze;
 
-	tie(matchesAkaze, ignore, ignore) = detectAndMatch(smallImg1, smallImg2, akaze, akazeName, NORM_HAMMING); //add true param to show matches
+	tie(matchesAkaze, ignore, ignore) = detectAndMatch(smallImg1, smallImg2, akaze, akazeName, NORM_HAMMING, true); //add true param to show matches
 
 	// AKAZE
 	useFeatureDetection(matchesAkaze, akazeName);
