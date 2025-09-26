@@ -4,6 +4,8 @@
 #include <opencv2/core/utils/logger.hpp>
 #include <iostream>
 #include <tuple>
+#include <fstream>
+#include <vector>
 
 using namespace cv;
 using namespace std;
@@ -27,9 +29,8 @@ static Mat featherBlend(const Mat& warped, const Mat& img2) {
 			Vec3b c1 = warped.at<Vec3b>(y, x);
 			Vec3b c2 = img2.at<Vec3b>(y, x);
 			if (c2 != Vec3b(0, 0, 0)) { // overlapping
-				// weighted average
 				for (int i = 0; i < 3; i++)
-					result.at<Vec3b>(y, x)[i] = uchar(0.5 * c1[i] + 0.5 * c2[i]);
+					result.at<Vec3b>(y, x)[i] = uchar(0.5 * c1[i] + 0.5 * c2[i]); // for weighted average
 			}
 		}
 	}
@@ -44,7 +45,7 @@ static tuple<vector<DMatch>, vector<KeyPoint>, vector<KeyPoint>> detectAndMatch(
 	detector->detectAndCompute(img1, noArray(), kp1, desc1);
 	detector->detectAndCompute(img2, noArray(), kp2, desc2);
 
-	cout << name << " Key points in Image1: " << kp1.size() << ", Image2: " << kp2.size() << endl;
+	cout << name << name <<" Key points in Image1: " << kp1.size() << ", Image2: " << kp2.size() << endl;
 
 	BFMatcher matcher(norm);
 
@@ -52,7 +53,17 @@ static tuple<vector<DMatch>, vector<KeyPoint>, vector<KeyPoint>> detectAndMatch(
 
 	long t0 = getTickCount();
 
-	matcher.match(desc1, desc2, matches);
+	vector<vector<DMatch>> knnMatches;
+	
+	matcher.knnMatch(desc1, desc2, knnMatches, 2);
+	
+	for (auto& match : knnMatches)
+	{
+		if (match[0].distance < (0.80f * match[1].distance) && match.size() >= 2)
+			matches.push_back(match[0]);
+	}
+
+	cout << name << " Matches: " << matches.size() << endl;
 
 	long t1 = getTickCount();
 
@@ -96,16 +107,30 @@ static Mat stitchUsingRANSAC(const Mat& img1, const Mat& img2, vector<DMatch> ma
 	Mat result(warped, Rect(0, 0, img2.cols, img2.rows));
 	img2.copyTo(result);
 
-	imshow("Stitched Image", warped);
+	imshow("Stitched Image", result);
 
-	return warped;
+	return result;
 }
 
 static void useFeatureDetection(vector<DMatch> matches, string name) {
 
 	vector<float> distances;
 
-	for (auto& m : matches) distances.push_back(m.distance);
+	ofstream fout("./distance_res_" + name + ".csv", ios::trunc); //save distances for better plotted histograms
+
+	try
+	{
+		for (auto& m : matches) {
+			distances.push_back(m.distance);
+			fout << m.distance << "\n";
+		}
+	}
+	catch (const std::exception&) {
+	
+	}
+	
+	fout.close();
+
 
 	Mat distMat(distances);
 	int channels[] = { 0 };
@@ -139,8 +164,14 @@ int main() {
 	cv::utils::logging::setLogLevel(cv::utils::logging::LOG_LEVEL_SILENT);
 
 	// Import images
-	Mat img1 = imread("./ImageSource/indoor-s1-1.jpg", IMREAD_COLOR_BGR);
-	Mat img2 = imread("./ImageSource/indoor-s1-2.jpg", IMREAD_COLOR_BGR);
+	//Mat img1 = imread("./ImageSource/indoor-s1-1.jpg", IMREAD_COLOR_BGR);
+	//Mat img2 = imread("./ImageSource/indoor-s1-2.jpg", IMREAD_COLOR_BGR);
+
+	//Mat img1 = imread("./ImageSource/indoor-s2-1.jpg", IMREAD_COLOR_BGR);
+	//Mat img2 = imread("./ImageSource/indoor-s2-2.jpg", IMREAD_COLOR_BGR);
+	//
+	Mat img1 = imread("./ImageSource/outdoor-s3-2.jpg", IMREAD_COLOR_BGR);
+	Mat img2 = imread("./ImageSource/outdoor-s3-3.jpg", IMREAD_COLOR_BGR);
 
 	// Check if import is successful
 	if (img1.empty() || img2.empty()) {
@@ -178,23 +209,23 @@ int main() {
 
 	waitKey(0);
 
-	// Homography and warping
-	Mat resultOfWarping;
-	vector<double> thresholds = { 1.0, 3.0, 5.0, 10.0 };
+	//// Homography and warping
+	//Mat resultOfWarping;
+	//vector<double> thresholds = { 1.0, 3.0, 5.0, 10.0 };
 
-	for (double t : thresholds) {
+	//for (double t : thresholds) {
 
-		Mat resultOfWarping = stitchUsingRANSAC(smallImg1, smallImg2, matchesSift, kp1, kp2, 10.0);
-		waitKey(0); // pause to observe visual quality
-	}
+	//	Mat resultOfWarping = stitchUsingRANSAC(smallImg1, smallImg2, matchesSift, kp1, kp2, t);
+	//	waitKey(0); // pause to observe visual quality
+	//}
 
-	Mat overlayResult = overlayBlend(resultOfWarping, smallImg2);
-	imshow("Overlay Blend", overlayResult);
+	//Mat overlayResult = overlayBlend(resultOfWarping, smallImg2);
+	//imshow("Overlay Blend", overlayResult);
 
-	Mat featherResult = featherBlend(resultOfWarping, smallImg2);
-	imshow("Feathering Blend", featherResult);
+	//Mat featherResult = featherBlend(resultOfWarping, smallImg2);
+	//imshow("Feathering Blend", featherResult);
 
-	waitKey(0);
+	//waitKey(0);
 
 	return 0;
 }
