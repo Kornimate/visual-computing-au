@@ -45,7 +45,7 @@ static tuple<vector<DMatch>, vector<KeyPoint>, vector<KeyPoint>> detectAndMatch(
 	detector->detectAndCompute(img1, noArray(), kp1, desc1);
 	detector->detectAndCompute(img2, noArray(), kp2, desc2);
 
-	cout << name << name <<" Key points in Image1: " << kp1.size() << ", Image2: " << kp2.size() << endl;
+	cout << name << name << " Key points in Image1: " << kp1.size() << ", Image2: " << kp2.size() << endl;
 
 	BFMatcher matcher(norm);
 
@@ -54,9 +54,9 @@ static tuple<vector<DMatch>, vector<KeyPoint>, vector<KeyPoint>> detectAndMatch(
 	long t0 = getTickCount();
 
 	vector<vector<DMatch>> knnMatches;
-	
+
 	matcher.knnMatch(desc1, desc2, knnMatches, 2);
-	
+
 	for (auto& match : knnMatches)
 	{
 		if (match[0].distance < (0.80f * match[1].distance) && match.size() >= 2)
@@ -126,9 +126,9 @@ static void useFeatureDetection(vector<DMatch> matches, string name) {
 		}
 	}
 	catch (const std::exception&) {
-	
+
 	}
-	
+
 	fout.close();
 
 
@@ -164,14 +164,14 @@ int main() {
 	cv::utils::logging::setLogLevel(cv::utils::logging::LOG_LEVEL_SILENT);
 
 	//// Import images
-	//Mat img1 = imread("./ImageSource/indoor-s1-1.jpg", IMREAD_COLOR_BGR);
-	//Mat img2 = imread("./ImageSource/indoor-s1-2.jpg", IMREAD_COLOR_BGR);
+	Mat img1 = imread("./ImageSource/indoor-s1-1.jpg", IMREAD_COLOR_BGR);
+	Mat img2 = imread("./ImageSource/indoor-s1-2.jpg", IMREAD_COLOR_BGR);
 
 	//Mat img1 = imread("./ImageSource/indoor-s2-1.jpg", IMREAD_COLOR_BGR);
 	//Mat img2 = imread("./ImageSource/indoor-s2-2.jpg", IMREAD_COLOR_BGR);
-	
-	Mat img1 = imread("./ImageSource/outdoor-s3-2.jpg", IMREAD_COLOR_BGR);
-	Mat img2 = imread("./ImageSource/outdoor-s3-3.jpg", IMREAD_COLOR_BGR);
+
+	//Mat img1 = imread("./ImageSource/outdoor-s3-2.jpg", IMREAD_COLOR_BGR);
+	//Mat img2 = imread("./ImageSource/outdoor-s3-3.jpg", IMREAD_COLOR_BGR);
 
 	// Check if import is successful
 	if (img1.empty() || img2.empty()) {
@@ -211,20 +211,20 @@ int main() {
 
 	//// Homography and warping
 	Mat resultOfWarping;
-	Mat resultOfWarping2;
-	vector<double> thresholds = { 1.0, 3.0, 5.0, 10.0 };
+	//Mat resultOfWarping2;
+	//vector<double> thresholds = { 1.0, 3.0, 5.0, 10.0 };
 
-	for (double t : thresholds) {
+	//for (double t : thresholds) {
 
-		resultOfWarping = stitchUsingRANSAC(smallImg1, smallImg2, matchesSift, kp1, kp2, t, siftName);
-		waitKey(0);
-	}
+	//	waitKey(0);
+	//}
+	resultOfWarping = stitchUsingRANSAC(smallImg1, smallImg2, matchesSift, kp1, kp2, 5.0, siftName);
 
-	//Mat overlayResult = overlayBlend(resultOfWarping, smallImg2);
-	//imshow("Overlay Blend", overlayResult);
+	Mat overlayResult = overlayBlend(resultOfWarping, smallImg2);
+	imshow("Overlay Blend", overlayResult);
 
-	//Mat featherResult = featherBlend(resultOfWarping, smallImg2);
-	//imshow("Feathering Blend", featherResult);
+	Mat featherResult = featherBlend(resultOfWarping, smallImg2);
+	imshow("Feathering Blend", featherResult);
 
 	waitKey(0);
 
