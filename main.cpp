@@ -82,7 +82,7 @@ static tuple<vector<DMatch>, vector<KeyPoint>, vector<KeyPoint>> detectAndMatch(
 	return make_tuple(matches, kp1, kp2);
 }
 
-static Mat stitchUsingRANSAC(const Mat& img1, const Mat& img2, vector<DMatch> matches, vector<KeyPoint> kp1, vector<KeyPoint> kp2, double ransacThresh) {
+static Mat stitchUsingRANSAC(const Mat& img1, const Mat& img2, vector<DMatch> matches, vector<KeyPoint> kp1, vector<KeyPoint> kp2, double ransacThresh, string name) {
 
 	vector<Point2f> pts1, pts2;
 	for (auto& m : matches) {
@@ -100,14 +100,14 @@ static Mat stitchUsingRANSAC(const Mat& img1, const Mat& img2, vector<DMatch> ma
 	tm.stop();
 
 	int inliers = countNonZero(inlierMask);
-	cout << "RANSAC threshold = " << ransacThresh << ", inliers = " << inliers << ", time = " << tm.getTimeMilli() << " ms" << endl;
+	cout << name << "RANSAC threshold = " << ransacThresh << ", inliers = " << inliers << ", time = " << tm.getTimeMilli() << " ms" << " ratio: " << (double)inliers / matches.size() << endl;
 
 	Mat warped;
 	warpPerspective(img1, warped, H, Size(img1.cols + img2.cols, max(img1.rows, img2.rows)));
 	Mat result(warped, Rect(0, 0, img2.cols, img2.rows));
 	img2.copyTo(result);
 
-	imshow("Stitched Image", result);
+	//imshow("Stitched Image", result);
 
 	return result;
 }
@@ -156,7 +156,7 @@ static void useFeatureDetection(vector<DMatch> matches, string name) {
 			Scalar(0, 0, 255), 2, 8, 0);
 	}
 
-	imshow(name + " Match Distance Histogram", histImage);
+	//imshow(name + " Match Distance Histogram", histImage);
 }
 
 int main() {
@@ -167,11 +167,11 @@ int main() {
 	//Mat img1 = imread("./ImageSource/indoor-s1-1.jpg", IMREAD_COLOR_BGR);
 	//Mat img2 = imread("./ImageSource/indoor-s1-2.jpg", IMREAD_COLOR_BGR);
 
-	//Mat img1 = imread("./ImageSource/indoor-s2-1.jpg", IMREAD_COLOR_BGR);
-	//Mat img2 = imread("./ImageSource/indoor-s2-2.jpg", IMREAD_COLOR_BGR);
-	//
-	Mat img1 = imread("./ImageSource/outdoor-s3-2.jpg", IMREAD_COLOR_BGR);
-	Mat img2 = imread("./ImageSource/outdoor-s3-3.jpg", IMREAD_COLOR_BGR);
+	Mat img1 = imread("./ImageSource/indoor-s2-1.jpg", IMREAD_COLOR_BGR);
+	Mat img2 = imread("./ImageSource/indoor-s2-2.jpg", IMREAD_COLOR_BGR);
+	
+	//Mat img1 = imread("./ImageSource/outdoor-s3-2.jpg", IMREAD_COLOR_BGR);
+	//Mat img2 = imread("./ImageSource/outdoor-s3-3.jpg", IMREAD_COLOR_BGR);
 
 	// Check if import is successful
 	if (img1.empty() || img2.empty()) {
@@ -207,17 +207,19 @@ int main() {
 	// AKAZE
 	useFeatureDetection(matchesAkaze, akazeName);
 
-	waitKey(0);
+	//waitKey(0);
 
 	//// Homography and warping
-	//Mat resultOfWarping;
-	//vector<double> thresholds = { 1.0, 3.0, 5.0, 10.0 };
+	Mat resultOfWarping;
+	Mat resultOfWarping2;
+	vector<double> thresholds = { 1.0, 3.0, 5.0, 10.0 };
 
-	//for (double t : thresholds) {
+	for (double t : thresholds) {
 
-	//	Mat resultOfWarping = stitchUsingRANSAC(smallImg1, smallImg2, matchesSift, kp1, kp2, t);
-	//	waitKey(0); // pause to observe visual quality
-	//}
+		resultOfWarping = stitchUsingRANSAC(smallImg1, smallImg2, matchesSift, kp1, kp2, t, siftName);
+		//resultOfWarping2 = stitchUsingRANSAC(smallImg1, smallImg2, matchesAkaze, kp1, kp2, t, akazeName);
+		waitKey(0); // pause to observe visual quality
+	}
 
 	//Mat overlayResult = overlayBlend(resultOfWarping, smallImg2);
 	//imshow("Overlay Blend", overlayResult);
