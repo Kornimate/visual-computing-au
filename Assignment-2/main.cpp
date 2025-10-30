@@ -433,8 +433,6 @@ int main() {
 	auto t0 = std::chrono::steady_clock::now();
 	int frames = 0;
 
-	int resolutions[] = { 1, 2, 3 };
-
 	// --- Main loop ---
 	while (!glfwWindowShouldClose(win)) {
 		// Poll input
@@ -450,21 +448,6 @@ int main() {
 		if (glfwGetKey(win, GLFW_KEY_UP) == GLFW_PRESS) pixelBlock = std::min(256, pixelBlock + 1);
 		if (glfwGetKey(win, GLFW_KEY_DOWN) == GLFW_PRESS) pixelBlock = std::max(1, pixelBlock - 1);
 		if (glfwGetKey(win, GLFW_KEY_R) == GLFW_PRESS) { state.rot = 0.0f; state.scale = 1.0f; state.tx = 0.0f; state.ty = 0.0f; }
-
-		if (glfwGetKey(win, GLFW_KEY_4) == GLFW_PRESS) {
-			cap.set(cv::CAP_PROP_FRAME_WIDTH, 1280);
-			cap.set(cv::CAP_PROP_FRAME_HEIGHT, 720);
-		}
-
-		if (glfwGetKey(win, GLFW_KEY_5) == GLFW_PRESS) {
-			cap.set(cv::CAP_PROP_FRAME_WIDTH, 640);
-			cap.set(cv::CAP_PROP_FRAME_HEIGHT, 360);
-		}
-
-		if (glfwGetKey(win, GLFW_KEY_6) == GLFW_PRESS) {
-			cap.set(cv::CAP_PROP_FRAME_WIDTH, 320);
-			cap.set(cv::CAP_PROP_FRAME_HEIGHT, 240);
-		}
 
 		// Grab a frame (BGR8)
 		if (!cap.read(frameBGR) || frameBGR.empty()) {
