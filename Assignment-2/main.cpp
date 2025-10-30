@@ -135,7 +135,7 @@ static void cursorPosCB(GLFWwindow* w, double x, double y) {
 
 	if (st->draggingPan) {
 		// Map window pixels to UV motion, accounting for letterbox scale
-		st->tx += float(dx) / (double(st->winW) * st->sx);
+		st->tx -= float(dx) / (double(st->winW) * st->sx);
 		st->ty -= float(dy) / (double(st->winH) * st->sy);
 		st->tx = std::max(-2.0f, std::min(2.0f, st->tx));
 		st->ty = std::max(-2.0f, std::min(2.0f, st->ty));
@@ -163,7 +163,7 @@ static void scrollCB(GLFWwindow* w, double /*xoff*/, double yoff) {
 	auto* st = (AppState*)glfwGetWindowUserPointer(w);
 	if (!st) return;
 	float k = (yoff > 0) ? 1.1f : 0.9f;
-	st->scale *= k;
+	st->scale /= k;
 	st->scale = std::max(0.05f, std::min(10.0f, st->scale));
 }
 
