@@ -2,10 +2,10 @@
 Repository for Visual Computing Course in Aarhus University
 
 ### Build the code:
- 0. Use Visual Studio
- 1. Open the actual Assignment's folder (Assignment 1/2) in VS
- 2. In CMakeLists.txt change the `set(CMAKE_TOOLCHAIN_FILE "<your vcpkg location>")` to your actual location of vcpkg
- 3. Build and Run the project using VS
+0. Use Visual Studio
+1. Open the actual Assignment's folder (Assignment 1/2) in VS
+2. In CMakeLists.txt change the `set(CMAKE_TOOLCHAIN_FILE "<your vcpkg location>")` to your actual location of vcpkg
+3. Build and Run the project using VS
 
 ### Assignment 2 usage:
  - Usage:
