@@ -5,8 +5,8 @@
 
 void LoggerService::LogControls() {
 	std::cout << "GL: " << glGetString(GL_VERSION) << "\n";
-	std::cout << "Controls: [1] Pixelate  [2] SinCity [3] Comic [0] None  |  [G] GPU  [C] CPU"
-		<< "  |  Left-drag: pan  Right-drag/Shift+L: rotate  Wheel: zoom  [R]: reset  [Esc]: Quit\n";
+	std::cout << "Controls: \n [1] Pixelate  [2] SinCity [3] Comic [0] None  \n [G] GPU  [C] CPU"
+		<< "  \n Left-drag: pan  Right-drag/Shift+L: rotate  Wheel: zoom  \n [R]: reset  [Esc]: Quit\n";
 }
 
 void LoggerService::LogStatusOfApp(int frames, int pixelBlock, int filter, bool useGPU, AppState& state) {
