@@ -21,7 +21,7 @@ Repository for Visual Computing Course in Aarhus University
      - [Key Down Arrow] decrease pixel block size
      - [Key Up Arrow] increase pixel block size
    - Transforms:
-     - [Mouse Left-drag]: translate (pan)
+     - [Mouse Left-drag] translate (pan)
      - [Mouse Right-drag] OR [Key Shift+ Mouse Left-drag] rotate
      - [Mouse wheel] zoom
      - [Key R] reset transform
