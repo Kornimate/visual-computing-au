@@ -439,10 +439,10 @@ int main() {
 		glfwPollEvents();
 		if (glfwGetKey(win, GLFW_KEY_ESCAPE) == GLFW_PRESS) glfwSetWindowShouldClose(win, GLFW_TRUE);
 
-		if (glfwGetKey(win, GLFW_KEY_0) == GLFW_PRESS) filter = F_NONE;
-		if (glfwGetKey(win, GLFW_KEY_1) == GLFW_PRESS) filter = F_PIXELATE;
-		if (glfwGetKey(win, GLFW_KEY_2) == GLFW_PRESS) filter = F_SINCITY;
-		if (glfwGetKey(win, GLFW_KEY_3) == GLFW_PRESS) filter = F_COMIC;
+		if (glfwGetKey(win, GLFW_KEY_1) == GLFW_PRESS) filter = F_NONE;
+		if (glfwGetKey(win, GLFW_KEY_2) == GLFW_PRESS) filter = F_PIXELATE;
+		if (glfwGetKey(win, GLFW_KEY_3) == GLFW_PRESS) filter = F_SINCITY;
+		if (glfwGetKey(win, GLFW_KEY_4) == GLFW_PRESS) filter = F_COMIC;
 		if (glfwGetKey(win, GLFW_KEY_G) == GLFW_PRESS) useGPU = true;
 		if (glfwGetKey(win, GLFW_KEY_C) == GLFW_PRESS) useGPU = false;
 		if (glfwGetKey(win, GLFW_KEY_UP) == GLFW_PRESS) pixelBlock = std::min(256, pixelBlock + 1);
