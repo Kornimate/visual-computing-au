@@ -1,5 +1,5 @@
 # <p align=center>Visual Computing AU</p>
-<p align=center>Repository for Visual Computing Course in Aarhus University</p>
+*<p align=center>Repository for Visual Computing Course in Aarhus University</p>*
 
 ### Build the code:
 0. Use Visual Studio
