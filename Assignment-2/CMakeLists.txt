@@ -1,8 +1,18 @@
 cmake_minimum_required(VERSION 3.16)
-project(MyProject)
+project(Assignment2)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_TOOLCHAIN_FILE "D:/vcpkg/scripts/buildsystems/vcpkg.cmake"
 CACHE STRING "Vcpkg toolchain file")
 find_package(OpenCV REQUIRED)
-add_executable(MyProject main.cpp)
-target_link_libraries(MyProject PRIVATE ${OpenCV_LIBS})
+find_package(glfw3 REQUIRED)
+find_package(glad CONFIG REQUIRED)
+find_package(glm CONFIG REQUIRED)
+find_package(OpenGL REQUIRED)
+add_executable(Assignment2 main.cpp )
+target_link_libraries(Assignment2 PRIVATE
+    OpenGL::GL
+    glfw
+    glad::glad
+    glm::glm
+    ${OpenCV_LIBS}
+)
