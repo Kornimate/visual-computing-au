@@ -41,6 +41,8 @@ int main() {
 
 	if (!window->init()) {
 		std::cerr << "Failed to initialize the window!" << std::endl;
+		delete window;
+		return EXIT_FAILURE;
 	}
 
 	window->run();

@@ -5,7 +5,8 @@
 #include "../Services/TransformService.h"
 #include "../Models/Filters.h"
 
-#define INIT_SUCCESS 0
+#define INIT_SUCCESS 1
+#define INIT_FAILURE 0
 
 // public methods
 
@@ -136,7 +137,7 @@ int Window::init() {
 	catch (const std::exception& e)
 	{
 		std::cerr << e.what() << std::endl;
-		return EXIT_FAILURE;
+		return INIT_FAILURE;
 	}
 
 	return INIT_SUCCESS;
