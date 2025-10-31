@@ -8,7 +8,7 @@ find_package(glfw3 REQUIRED)
 find_package(glad CONFIG REQUIRED)
 find_package(glm CONFIG REQUIRED)
 find_package(OpenGL REQUIRED)
-add_executable(Assignment2 main.cpp  "Services/MatrixService.h" "Services/MatrixService.cpp" "Views/Window.h" "Views/Window.cpp" "Services/TransformService.h" "Services/TransformService.cpp" "Views/Shader.cpp" "Views/Shader.h"  "Models/Filters.h" "Models/Filters.cpp" "Services/LoggerService.h" "Services/LoggerService.cpp")
+add_executable(Assignment2 main.cpp  "Services/MatrixService.h" "Services/MatrixService.cpp" "Views/Window.h" "Views/Window.cpp" "Services/TransformService.h" "Services/TransformService.cpp" "Views/Shader.cpp" "Views/Shader.h"  "Models/Filters.h" "Models/Filters.cpp" "Services/LoggerService.h" "Services/LoggerService.cpp" "Services/FileService.h" "Services/FileService.cpp")
 target_link_libraries(Assignment2 PRIVATE
     OpenGL::GL
     glfw
@@ -16,3 +16,5 @@ target_link_libraries(Assignment2 PRIVATE
     glm::glm
     ${OpenCV_LIBS}
 )
+file(COPY "Resources/" DESTINATION ${CMAKE_BINARY_DIR}/Resources)
+

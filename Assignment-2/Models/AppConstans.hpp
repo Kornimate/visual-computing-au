@@ -1,3 +1,5 @@
+#pragma once
+
 class AppConstants {
 public:
 	static const int WIN_H = 720;
