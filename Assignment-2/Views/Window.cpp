@@ -4,6 +4,7 @@
 #include "Shader.h"
 #include "../Services/TransformService.h"
 #include "../Models/Filters.h"
+#include "../Models/AppConstans.hpp"
 
 #define INIT_SUCCESS 1
 #define INIT_FAILURE 0
@@ -72,18 +73,18 @@ int Window::init() {
 		if (!this->_cap.isOpened()) {
 			throw std::runtime_error("Failed to open default camera");
 		}
-		this->_cap.set(cv::CAP_PROP_FRAME_WIDTH, 1280);
-		this->_cap.set(cv::CAP_PROP_FRAME_HEIGHT, 720);
+
+		this->_cap.set(cv::CAP_PROP_FRAME_WIDTH, AppConstants::WIN_W);
+		this->_cap.set(cv::CAP_PROP_FRAME_HEIGHT, AppConstants::WIN_H);
 		this->_cap.set(cv::CAP_PROP_CONVERT_RGB, true);
 
 		// Read one frame to learn width/height
-		cv::Mat frameBGR;
-		if (!this->_cap.read(frameBGR) || frameBGR.empty()) {
+		if (!this->_cap.read(this->_frameBGR) || this->_frameBGR.empty()) {
 			throw std::runtime_error("Could not read from camera");
 		}
 
-		this->_camW = frameBGR.cols;
-		this->_camH = frameBGR.rows;
+		this->_camW = this->_frameBGR.cols;
+		this->_camH = this->_frameBGR.rows;
 
 		_logger->LogCameraResolution(this->_camW, this->_camH);
 
@@ -94,7 +95,7 @@ int Window::init() {
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB8, this->_camW, this->_camH, 0, GL_BGR, GL_UNSIGNED_BYTE, frameBGR.data);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB8, this->_camW, this->_camH, 0, GL_BGR, GL_UNSIGNED_BYTE, this->_frameBGR.data);
 
 		// Fullscreen quad
 		const float quad[] = {
@@ -152,16 +153,16 @@ void Window::run() {
 		// Poll input
 		glfwPollEvents();
 
-		if (glfwGetKey(_win, GLFW_KEY_ESCAPE) == GLFW_PRESS) glfwSetWindowShouldClose(_win, GLFW_TRUE);
-		if (glfwGetKey(_win, GLFW_KEY_1) == GLFW_PRESS) this->_filter = F_NONE;
-		if (glfwGetKey(_win, GLFW_KEY_2) == GLFW_PRESS) this->_filter = F_PIXELATE;
-		if (glfwGetKey(_win, GLFW_KEY_3) == GLFW_PRESS) this->_filter = F_SINCITY;
-		if (glfwGetKey(_win, GLFW_KEY_4) == GLFW_PRESS) this->_filter = F_COMIC;
-		if (glfwGetKey(_win, GLFW_KEY_G) == GLFW_PRESS) this->_useGPU = true;
-		if (glfwGetKey(_win, GLFW_KEY_C) == GLFW_PRESS) this->_useGPU = false;
-		if (glfwGetKey(_win, GLFW_KEY_UP) == GLFW_PRESS) this->_pixelBlock = std::min(256, this->_pixelBlock + 1);
-		if (glfwGetKey(_win, GLFW_KEY_DOWN) == GLFW_PRESS) this->_pixelBlock = std::max(1, this->_pixelBlock - 1);
-		if (glfwGetKey(_win, GLFW_KEY_R) == GLFW_PRESS) { this->_state.rot = 0.0f; this->_state.scale = 1.0f; this->_state.tx = 0.0f; this->_state.ty = 0.0f; }
+		if (glfwGetKey(this->_win, GLFW_KEY_ESCAPE) == GLFW_PRESS) glfwSetWindowShouldClose(this->_win, GLFW_TRUE);
+		if (glfwGetKey(this->_win, GLFW_KEY_1) == GLFW_PRESS) this->_filter = F_NONE;
+		if (glfwGetKey(this->_win, GLFW_KEY_2) == GLFW_PRESS) this->_filter = F_PIXELATE;
+		if (glfwGetKey(this->_win, GLFW_KEY_3) == GLFW_PRESS) this->_filter = F_SINCITY;
+		if (glfwGetKey(this->_win, GLFW_KEY_4) == GLFW_PRESS) this->_filter = F_COMIC;
+		if (glfwGetKey(this->_win, GLFW_KEY_G) == GLFW_PRESS) this->_useGPU = true;
+		if (glfwGetKey(this->_win, GLFW_KEY_C) == GLFW_PRESS) this->_useGPU = false;
+		if (glfwGetKey(this->_win, GLFW_KEY_UP) == GLFW_PRESS) this->_pixelBlock = std::min(256, this->_pixelBlock + 1);
+		if (glfwGetKey(this->_win, GLFW_KEY_DOWN) == GLFW_PRESS) this->_pixelBlock = std::max(1, this->_pixelBlock - 1);
+		if (glfwGetKey(this->_win, GLFW_KEY_R) == GLFW_PRESS) { this->_state.rot = 0.0f; this->_state.scale = 1.0f; this->_state.tx = 0.0f; this->_state.ty = 0.0f; }
 
 		// Grab a frame (BGR8)
 		if (!this->_cap.read(this->_frameBGR) || this->_frameBGR.empty()) {
@@ -258,13 +259,15 @@ void Window::run() {
 
 		auto t1 = std::chrono::steady_clock::now();
 		if (std::chrono::duration_cast<std::chrono::seconds>(t1 - t0).count() >= 1) {
-			
+
 			_logger->LogStatusOfApp(frames, this->_pixelBlock, this->_filter, this->_useGPU, this->_state);
-			
+
 			frames = 0; t0 = t1;
 		}
 	}
 }
+
+// private methods
 
 void Window::cursorPosCB(GLFWwindow* w, double x, double y) {
 	auto* st = (AppState*)glfwGetWindowUserPointer(w);
@@ -308,5 +311,3 @@ void Window::scrollCB(GLFWwindow* w, double /*xoff*/, double yoff) {
 	st->scale /= k;
 	st->scale = std::max(0.05f, std::min(10.0f, st->scale));
 }
-
-// private methods
