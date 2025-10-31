@@ -10,10 +10,10 @@
 
 // public methods
 
-Window::Window(int initialW, int inititalH) {
+Window::Window(int initialW, int initialH) {
 	this->_initialW = initialW;
-	this->_initialH = inititalH;
-	this->_win = glfwCreateWindow(initialW, _initialH, "Assignment 2", nullptr, nullptr);
+	this->_initialH = initialH;
+	this->_win = glfwCreateWindow(initialW, initialH, "Assignment 2", nullptr, nullptr);
 	this->_logger = new LoggerService();
 	this->_cap = cv::VideoCapture(0, cv::CAP_ANY);
 	this->_frameBGR = cv::Mat::zeros(0, 0, CV_8UC3);
