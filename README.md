@@ -2,7 +2,7 @@
 *<p align=center>Repository for Visual Computing Course in Aarhus University</p>*
 
 ### Assignment 2: Build the code for Release and Debug versions as well
-0. If you have built it for running only (next paragraph after this) the delete the out folder, make sure cmake and externa libraries (`opencv:x64-windows glfw3:x64-windows glad:x64-windows glm:x64-windows`) are installed
+0. If you have built it for running only (next paragraph after this) the delete the out folder, make sure cmake and externa libraries (`opencv:x64-windows glfw3:x64-windows glad:x64-windows glm:x64-windows`) and `cmake` are installed
 1. Go to the Assignment 2 folder and fill out the missing parts of the command (`<your path to vcpkg>`) and run the following command: `cmake -S . -B build -G "Visual Studio 17 2022" -DCMAKE_TOOLCHAIN_FILE="<your path to vcpkg>/scripts/buildsystems/vcpkg.cmake"
 `
 2. Go to the created build folder and open the Assignment2.sln in Visual Studio
