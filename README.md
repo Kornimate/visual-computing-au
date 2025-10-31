@@ -26,3 +26,6 @@
      - [Mouse wheel] zoom
      - [Key R] reset transform
      - [Key Esc] Quit
+
+ *this assignment as made using Windows as OS, and the following vcpkg command was used to download the external libraries: <br>
+ `vcpkg install opencv:x64-windows glfw3:x64-windows glad:x64-windows glm:x64-windows`*
