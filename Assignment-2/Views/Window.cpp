@@ -4,7 +4,6 @@
 #include "Shader.h"
 #include "../Services/TransformService.h"
 #include "../Models/Filters.h"
-#include "../Models/AppConstans.hpp"
 
 #define INIT_SUCCESS 1
 #define INIT_FAILURE 0
@@ -74,8 +73,8 @@ int Window::init() {
 			throw std::runtime_error("Failed to open default camera");
 		}
 
-		this->_cap.set(cv::CAP_PROP_FRAME_WIDTH, AppConstants::WIN_W);
-		this->_cap.set(cv::CAP_PROP_FRAME_HEIGHT, AppConstants::WIN_H);
+		this->_cap.set(cv::CAP_PROP_FRAME_WIDTH, _initialW);
+		this->_cap.set(cv::CAP_PROP_FRAME_HEIGHT,_initialH);
 		this->_cap.set(cv::CAP_PROP_CONVERT_RGB, true);
 
 		// Read one frame to learn width/height
