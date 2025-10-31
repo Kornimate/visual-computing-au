@@ -37,13 +37,14 @@ int main() {
 	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 #endif
 
+	// test resolutions : 320, 180; 960, 540; 1280, 720;
 	Window* window = new Window(AppConstants::WIN_W, AppConstants::WIN_H);
 
-
-	// test resolutions : 320, 180; 960, 540; 1280, 720;
 	if (!window->init()) {
 		std::cerr << "Failed to initialize the window!" << std::endl;
+		
 		delete window;
+		
 		return EXIT_FAILURE;
 	}
 
