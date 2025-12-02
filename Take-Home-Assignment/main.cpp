@@ -35,7 +35,7 @@ struct GLMesh {
 };
 
 struct SceneObject {
-    GLMesh* mesh;   // pointer to mesh (predefined or dynamic)
+    GLMesh* mesh;     // pointer to mesh (predefined or dynamic)
     float tx, ty, tz; // translation
 };
 
@@ -62,7 +62,7 @@ GLMesh gCuboidMesh;
 GLMesh gSphereMesh;
 GLMesh gPyramidMesh;
 GLMesh gPentagonPrismMesh;
-std::vector<GLMesh> gDynamicMeshes;   // meshes created from extrusion (X)
+std::vector<GLMesh> gDynamicMeshes;   // meshes created from extrusion / revolution
 std::vector<SceneObject> gObjects;    // all objects in 3D scene
 
 GLuint gProg2D = 0;
@@ -105,7 +105,35 @@ GLuint createProgram(const char* vs, const char* fs) {
 }
 
 // --------------------------------------------------------
+// RAW stroke extraction (NO shape approximation)
+// --------------------------------------------------------
+std::vector<cv::Point> getRawDrawnStroke(const cv::Mat& img) {
+    cv::Mat gray, blurImg, thresh;
+    cv::cvtColor(img, gray, cv::COLOR_BGR2GRAY);
+    cv::GaussianBlur(gray, blurImg, cv::Size(5, 5), 0);
+    cv::threshold(blurImg, thresh, 200, 255, cv::THRESH_BINARY_INV);
+
+    std::vector<std::vector<cv::Point>> contours;
+    cv::findContours(thresh, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_NONE);
+
+    if (contours.empty()) return {};
+
+    // largest contour
+    double best = 0.0;
+    int idx = 0;
+    for (int i = 0; i < (int)contours.size(); ++i) {
+        double a = cv::contourArea(contours[i]);
+        if (a > best) {
+            best = a;
+            idx = i;
+        }
+    }
+    return contours[idx]; // raw points
+}
+
+// --------------------------------------------------------
 // Shape detection (square vs rectangle, circle vs polygon)
+// used by R (predefined shapes) and X (extrusion)
 // --------------------------------------------------------
 DetectedShape detectShapeWithPolygon(const cv::Mat& img) {
     cv::Mat gray, blurImg, thresh;
@@ -243,6 +271,87 @@ Mesh extrudeY(const std::vector<cv::Point>& poly, float height) {
 }
 
 // --------------------------------------------------------
+// Revolution / Lathe mesh from RAW stroke
+// axis: 'x' (around X axis) or 'y' (around Y axis)
+// --------------------------------------------------------
+Mesh revolvePolygon(const std::vector<cv::Point>& raw, char axis, int segments) {
+    Mesh m;
+    if (raw.size() < 2) return m;
+
+    float cx = DRAW_W * 0.5f;
+    float cy = DRAW_H * 0.5f;
+    float scale = 0.0015f;
+
+    // convert raw points into 3D profile: (x,y,0)
+    std::vector<float> px, py, pz;
+    px.reserve(raw.size());
+    py.reserve(raw.size());
+    pz.reserve(raw.size());
+
+    for (auto& p : raw) {
+        float x = (p.x - cx) * scale;
+        float y = (cy - p.y) * scale; // flip Y so up is +Y
+        px.push_back(x);
+        py.push_back(y);
+        pz.push_back(0.0f);
+    }
+
+    int R = (int)raw.size();
+
+    // sweep around axis
+    for (int i = 0; i <= segments; ++i) {
+        float ang = (2.0f * CV_PI * i) / segments;
+        float c = std::cos(ang);
+        float s = std::sin(ang);
+
+        for (int k = 0; k < R; ++k) {
+            float x = px[k], y = py[k], z = pz[k];
+            float rx, ry, rz;
+
+            if (axis == 'y') {
+                // rotate around Y axis
+                rx = x * c + z * s;
+                ry = y;
+                rz = -x * s + z * c;
+            }
+            else {
+                // rotate around X axis
+                rx = x;
+                ry = y * c - z * s;
+                rz = y * s + z * c;
+            }
+
+            m.vertices.push_back(rx);
+            m.vertices.push_back(ry);
+            m.vertices.push_back(rz);
+        }
+    }
+
+    // connect rings into quads -> triangles
+    for (int i = 0; i < segments; ++i) {
+        int r0 = i * R;
+        int r1 = (i + 1) * R;
+
+        for (int k = 0; k < R - 1; ++k) {
+            int a = r0 + k;
+            int b = r0 + k + 1;
+            int c2 = r1 + k;
+            int d = r1 + k + 1;
+
+            m.indices.push_back(a);
+            m.indices.push_back(c2);
+            m.indices.push_back(b);
+
+            m.indices.push_back(b);
+            m.indices.push_back(c2);
+            m.indices.push_back(d);
+        }
+    }
+
+    return m;
+}
+
+// --------------------------------------------------------
 // Primitive mesh builders (predefined shapes)
 // --------------------------------------------------------
 Mesh createBoxMesh(float sx, float sy, float sz) {
@@ -251,7 +360,6 @@ Mesh createBoxMesh(float sx, float sy, float sz) {
     float y = sy * 0.5f;
     float z = sz * 0.5f;
 
-    // 8 vertices
     float v[] = {
         -x, -y, -z,
          x, -y, -z,
@@ -287,12 +395,9 @@ Mesh createPyramidMesh(float baseSize, float height) {
     float h = height;
     float b = baseSize * 0.5f;
 
-    // Base triangle on y = -h/2
-    // Equilateral-ish triangle in XZ
     float yBase = -h * 0.5f;
     float yTop = +h * 0.5f;
 
-    // 0,1,2: base; 3: apex
     std::vector<float> v = {
         -b, yBase, -b,
          b, yBase, -b,
@@ -301,7 +406,7 @@ Mesh createPyramidMesh(float baseSize, float height) {
     };
     m.vertices = v;
 
-    // Base (triangle)
+    // Base
     m.indices.push_back(0);
     m.indices.push_back(1);
     m.indices.push_back(2);
@@ -326,12 +431,12 @@ Mesh createSphereMesh(float radius, int slices, int stacks) {
     Mesh m;
     for (int i = 0; i <= stacks; ++i) {
         float v = (float)i / (float)stacks;
-        float phi = v * CV_PI; // 0..PI
+        float phi = v * CV_PI;
         float y = std::cos(phi);
         float r = std::sin(phi);
         for (int j = 0; j <= slices; ++j) {
             float u = (float)j / (float)slices;
-            float theta = u * 2.0f * CV_PI; // 0..2PI
+            float theta = u * 2.0f * CV_PI;
             float x = r * std::cos(theta);
             float z = r * std::sin(theta);
             m.vertices.push_back(radius * x);
@@ -478,7 +583,7 @@ void cursor_position_callback(GLFWwindow* window, double xpos, double ypos) {
     g_state.needUpdate = true;
 }
 
-// Build a simple MVP (here just rotation * translation, no perspective)
+// Build a simple MVP (rotation around Y + translation)
 void buildRotY(float angle, float tx, float ty, float tz, float out[16]) {
     float c = std::cos(angle);
     float s = std::sin(angle);
@@ -490,18 +595,23 @@ void buildRotY(float angle, float tx, float ty, float tz, float out[16]) {
     out[3] = 0.0; out[7] = 0.0f; out[11] = 0.0; out[15] = 1.0f;
 }
 
+// --------------------------------------------------------
+// Key callback (R, X, V, H, C)
+// --------------------------------------------------------
 void key_callback_2D(GLFWwindow* window, int key, int scancode, int action, int mods) {
     (void)window; (void)scancode; (void)mods;
     if (action != GLFW_PRESS) return;
 
+    // C — clear canvas
     if (key == GLFW_KEY_C) {
         g_state.canvas.setTo(cv::Scalar(255, 255, 255));
         g_state.needUpdate = true;
         std::cout << "Canvas cleared.\n";
+        return;
     }
 
+    // R — predefined shapes based on detected polygon
     if (key == GLFW_KEY_R) {
-        // Shape recognition -> predefined primitive
         DetectedShape ds = detectShapeWithPolygon(g_state.canvas);
         std::cout << "Recognized: " << ds.label << "\n";
 
@@ -514,50 +624,112 @@ void key_callback_2D(GLFWwindow* window, int key, int scancode, int action, int 
         else if (ds.label == "pentagon")  chosen = &gPentagonPrismMesh;
         else {
             std::cout << "No predefined 3D shape for label: " << ds.label << "\n";
+            return;
         }
 
-        if (chosen && chosen->vao != 0) {
-            // Position new object in grid
-            int idx = (int)gObjects.size();
-            int row = idx / 5;
-            int col = idx % 5;
-            float tx = (col - 2) * 0.8f;
-            float tz = -row * 0.8f;
-            float ty = 0.0f;
+        int idx = (int)gObjects.size();
+        int row = idx / 5;
+        int col = idx % 5;
+        float tx = (col - 2) * 0.8f;
+        float tz = -row * 0.8f;
+        float ty = 0.0f;
 
-            gObjects.push_back({ chosen, tx, ty, tz });
-            std::cout << "Added 3D primitive to scene.\n";
-        }
+        gObjects.push_back({ chosen, tx, ty, tz });
+        std::cout << "Added predefined 3D shape.\n";
+        return;
     }
 
+    // X — extrusion of detected polygon
     if (key == GLFW_KEY_X) {
-        // Extrusion of actual user-drawn polygon
         DetectedShape ds = detectShapeWithPolygon(g_state.canvas);
         if (ds.polygon.empty()) {
             std::cout << "No shape to extrude.\n";
             return;
         }
-        std::cout << "Extruding drawn polygon (label: " << ds.label << ")\n";
 
+        std::cout << "Extruding polygon (label: " << ds.label << ")\n";
         Mesh m = extrudeY(ds.polygon, 0.6f);
         GLMesh gm = uploadMesh(m);
-        if (gm.vao != 0) {
-            gDynamicMeshes.push_back(gm);
-            GLMesh* ptr = &gDynamicMeshes.back();
-
-            int idx = (int)gObjects.size();
-            int row = idx / 5;
-            int col = idx % 5;
-            float tx = (col - 2) * 0.8f;
-            float tz = -row * 0.8f;
-            float ty = 0.0f;
-
-            gObjects.push_back({ ptr, tx, ty, tz });
-            std::cout << "Added extruded shape to scene.\n";
-        }
-        else {
+        if (!gm.vao) {
             std::cout << "Failed to upload extruded mesh.\n";
+            return;
         }
+
+        gDynamicMeshes.push_back(gm);
+        GLMesh* ptr = &gDynamicMeshes.back();
+
+        int idx = (int)gObjects.size();
+        int row = idx / 5;
+        int col = idx % 5;
+        float tx = (col - 2) * 0.8f;
+        float tz = -row * 0.8f;
+        float ty = 0.0f;
+
+        gObjects.push_back({ ptr, tx, ty, tz });
+        std::cout << "Added extruded shape.\n";
+        return;
+    }
+
+    // V — revolution around vertical axis (use RAW stroke, rotate around X-axis)
+    if (key == GLFW_KEY_V) {
+        std::vector<cv::Point> raw = getRawDrawnStroke(g_state.canvas);
+        if (raw.empty()) {
+            std::cout << "No raw stroke to revolve.\n";
+            return;
+        }
+
+        std::cout << "Revolving RAW stroke around vertical axis (X-axis).\n";
+        Mesh m = revolvePolygon(raw, 'x', 64);
+        GLMesh gm = uploadMesh(m);
+        if (!gm.vao) {
+            std::cout << "Failed to upload revolution mesh.\n";
+            return;
+        }
+
+        gDynamicMeshes.push_back(gm);
+        GLMesh* ptr = &gDynamicMeshes.back();
+
+        int idx = (int)gObjects.size();
+        int row = idx / 5;
+        int col = idx % 5;
+        float tx = (col - 2) * 0.8f;
+        float tz = -row * 0.8f;
+        float ty = 0.0f;
+
+        gObjects.push_back({ ptr, tx, ty, tz });
+        std::cout << "Added revolution (X-axis) shape.\n";
+        return;
+    }
+
+    // H — revolution around horizontal axis (use RAW stroke, rotate around Y-axis)
+    if (key == GLFW_KEY_H) {
+        std::vector<cv::Point> raw = getRawDrawnStroke(g_state.canvas);
+        if (raw.empty()) {
+            std::cout << "No raw stroke to revolve.\n";
+            return;
+        }
+
+        std::cout << "Revolving RAW stroke around horizontal axis (Y-axis).\n";
+        Mesh m = revolvePolygon(raw, 'y', 64);
+        GLMesh gm = uploadMesh(m);
+        if (!gm.vao) {
+            std::cout << "Failed to upload revolution mesh.\n";
+            return;
+        }
+
+        gDynamicMeshes.push_back(gm);
+        GLMesh* ptr = &gDynamicMeshes.back();
+
+        int idx = (int)gObjects.size();
+        int row = idx / 5;
+        int col = idx % 5;
+        float tx = (col - 2) * 0.8f;
+        float tz = -row * 0.8f;
+        float ty = 0.0f;
+
+        gObjects.push_back({ ptr, tx, ty, tz });
+        std::cout << "Added revolution (Y-axis) shape.\n";
+        return;
     }
 }
 
@@ -565,6 +737,8 @@ void key_callback_2D(GLFWwindow* window, int key, int scancode, int action, int 
 // Main
 // --------------------------------------------------------
 int main() {
+    cv::utils::logging::setLogLevel(cv::utils::logging::LOG_LEVEL_SILENT);
+
     if (!glfwInit()) {
         std::cerr << "Failed to init GLFW.\n";
         return -1;
@@ -662,7 +836,7 @@ int main() {
     }
 
     glfwMakeContextCurrent(win3D);
-    // GLAD already initialized for the shared context
+    // GLAD already initialized for this shared context
 
     const char* vs3D = R"(
         #version 330 core
@@ -696,7 +870,7 @@ int main() {
     gPyramidMesh = uploadMesh(pyramidMesh);
     gPentagonPrismMesh = uploadMesh(pentPrismMesh);
 
-    // Set initial context back to 2D window
+    // Back to 2D as main context
     glfwMakeContextCurrent(win2D);
 
     // ------------- Main loop -------------
@@ -754,7 +928,6 @@ int main() {
         for (size_t i = 0; i < gObjects.size(); ++i) {
             SceneObject& obj = gObjects[i];
             float M[16];
-            // global rotation over time + object translation
             buildRotY(time * 0.5f, obj.tx, obj.ty, obj.tz, M);
             glUniformMatrix4fv(glGetUniformLocation(gProg3D, "uMVP"), 1, GL_FALSE, M);
 
