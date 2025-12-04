@@ -4,17 +4,17 @@
 ### Take-Home Assignment: Controls
 1. When 2D window is active (has focus):
   - ```c```: clear canvas
-  - ```r```: recignize shape, able to recognize: circle, triangle, square, pentagon, will insert a predefined shape into the 3D space
+  - ```r```: recognize shape, able to recognize: circle, triangle, square, pentagon, will insert a predefined shape into the 3D space
   - ```x```: extrusion on the y axis, uses the hand-drawn shape and will extrude that on the y axis
   - ```v```: revolution around the horizontal middle of the screen (x axis, screen middle shown on 2D window), uses the drawn shape
   - ```h```: revolution around the vertical middle of the screen (y axis, screen middle shown on 2D window), uses the drawn shape
 2. When 3D window is active (has focus):
   - ```Right Click + w```: go forward, mouse pointer modifies the direction
   - ```Right Click + s```: go backward, mouse pointer modifies the direction
-  - ```Right Click + a```: go left, mouse pointer modifies the direction
-  - ```Right Click + d```: go forward, mouse pointer modifies the direction
-  - ```Right Click + q```: go down, mouse pointer modifies the direction
-  - ```Right Click + e```: go up, mouse pointer modifies the direction
+  - ```Right Click + a```: go left
+  - ```Right Click + d```: go forward
+  - ```Right Click + q```: go down
+  - ```Right Click + e```: go up
   - ```t```: switch edition mode on/off
   - ```Right Click in edition mode```: rotation with mouse movement
   - ```Left Click in edition mode```: move object with mouse movement
