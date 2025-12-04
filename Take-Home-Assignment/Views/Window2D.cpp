@@ -200,13 +200,13 @@ void Window2D::key_callback_2D(GLFWwindow* window, int key, int scancode, int ac
 
 	// X — extrusion
 	if (key == GLFW_KEY_X) {
-		DetectedShape ds = ShapeFormationService::detectShapeWithPolygon(App::g_state.canvas);
-		if (ds.polygon.empty()) {
-			std::cout << "No shape to extrude.\n";
+		std::vector<cv::Point> raw = ShapeFormationService::getRawDrawnStroke(App::g_state.canvas);
+		if (raw.empty()) {
+			std::cout << "No raw stroke to revolve.\n";
 			return;
 		}
 
-		Mesh m = ShapeFormationService::extrudeY(ds.polygon, 0.6f);
+		Mesh m = ShapeFormationService::extrudeY(raw, 0.6f);
 		GLMesh gm = GPUConvertService::uploadMesh(m);
 		if (!gm.vao) {
 			std::cout << "Failed to upload extruded mesh.\n";

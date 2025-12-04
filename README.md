@@ -1,6 +1,27 @@
 # <p align=center>Visual Computing AU</p>
 *<p align=center>Repository for Visual Computing Course in Aarhus University</p>*
 
+### Take-Home Assignment: Controls
+1. When 2D window is active (has focus):
+  - ```c```: clear canvas
+  - ```r```: recignize shape, able to recognize: circle, triangle, square, pentagon, will insert a predefined shape into the 3D space
+  - ```x```: extrusion on the y axis, uses the hand-drawn shape and will extrude that on the y axis
+  - ```v```: revolution around the horizontal middle of the screen (x axis, screen middle shown on 2D window), uses the drawn shape
+  - ```h```: revolution around the vertical middle of the screen (y axis, screen middle shown on 2D window), uses the drawn shape
+2. When 3D window is active (has focus):
+  - ```Right Click + w```: go forward, mouse pointer modifies the direction
+  - ```Right Click + s```: go backward, mouse pointer modifies the direction
+  - ```Right Click + a```: go left, mouse pointer modifies the direction
+  - ```Right Click + d```: go forward, mouse pointer modifies the direction
+  - ```Right Click + q```: go down, mouse pointer modifies the direction
+  - ```Right Click + e```: go up, mouse pointer modifies the direction
+  - ```t```: switch edition mode on/off
+  - ```Right Click in edition mode```: rotation with mouse movement
+  - ```Left Click in edition mode```: move object with mouse movement
+  - ```Shift pressed during movement```: faster camera speed (towards moving)
+
+
+
 ### Assignment 2: Build the code for Release and Debug versions as well
 0. If you have built it for running only (next paragraph after this) the delete the out folder, make sure cmake and externa libraries (`opencv:x64-windows glfw3:x64-windows glad:x64-windows glm:x64-windows`) and `cmake` are installed
 1. Go to the Assignment 2 folder and fill out the missing parts of the command (`<your path to vcpkg>`) and run the following command: `cmake -S . -B build -G "Visual Studio 17 2022" -DCMAKE_TOOLCHAIN_FILE="<your path to vcpkg>/scripts/buildsystems/vcpkg.cmake"
