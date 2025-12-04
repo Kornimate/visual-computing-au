@@ -1,8 +1,13 @@
 #include "app.h"
+#include "Models/Constants.h"
 
 App::App(Window* win2d, Window* win3d) : _win2d(win2d), _win3d(win3d) {}
 
 App::~App() {
+	glfwDestroyWindow(this->_win3d->getWindowInstance());
+	glfwDestroyWindow(this->_win2d->getWindowInstance());
+	glfwTerminate();
+
 	delete _win2d;
 	delete _win3d;
 }
@@ -18,10 +23,20 @@ void App::initialize() {
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
 	this->_win2d->initialize();
-	this->_win3d->initialize();
+	this->_win3d->initialize(this->_win2d->getWindowInstance());
+
+	// Back to 2D window as initial context
+	glfwMakeContextCurrent(this->_win2d->getWindowInstance());
 }
 
 void App::run() {
-	this->_win2d->run();
-	this->_win3d->run();
+
+	while (!glfwWindowShouldClose(this->_win2d->getWindowInstance()) &&
+		!glfwWindowShouldClose(this->_win3d->getWindowInstance())) {
+		
+		this->_win2d->run();
+		this->_win3d->run();
+
+		glfwPollEvents();
+	}
 }

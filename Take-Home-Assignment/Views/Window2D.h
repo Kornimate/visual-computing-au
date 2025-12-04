@@ -8,7 +8,7 @@ class Window2D : public Window {
 public:
 	Window2D();
 	void run();
-	void initialize();
+	void initialize(GLFWwindow* win2D = nullptr);
 	GLFWwindow* getWindowInstance();
 private:
 	static void mouse_button_callback(GLFWwindow* window, int button, int action, int mods);

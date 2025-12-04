@@ -4,13 +4,15 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include "../Models/SceneObject.h"
+#include "../Models/Constants.h"
 
 class Window;
 
 class Window3D : public Window {
 public:
 	void run();
-	void initialize();
+	void initialize(GLFWwindow* win2D = nullptr);
+	GLFWwindow* getWindowInstance();
 	
 	static void Window3D::getRayFromMouse(double mouseX, double mouseY, int screenW, int screenH, const glm::mat4& projection, const glm::mat4& view, glm::vec3& outOrigin, glm::vec3& outDirection);
 	static bool rayIntersectsAABB(const glm::vec3& origin, const glm::vec3& dir, const glm::vec3& minBound, const glm::vec3& maxBound, float& tHit);
@@ -25,6 +27,9 @@ public:
 	void scroll_callback_3D(GLFWwindow* window, double xoffset, double yoffset);
 
 private:
+	GLFWwindow* _win3D;
+	GLuint _gProg3D = 0;
+
 	float _gDeltaTime = 0.0f;
 	float _gLastFrame = 0.0f;
 
@@ -42,8 +47,8 @@ private:
 	bool  _gFirstMouse3D = true;
 	float _gLastX3D = 400.0f;
 	float _gLastY3D = 300.0f;
-	int   _g3DWidth = 800;
-	int   _g3DHeight = 600;
+	int   _g3DWidth = AppConstants::DRAW_W;
+	int   _g3DHeight = AppConstants::DRAW_H;
 
 	int   _gSelectedObject = -1;
 	glm::vec3 _gDragPlanePoint = glm::vec3(0.0f);

@@ -17,15 +17,46 @@ Window2D::Window2D() {
 }
 
 void Window2D::run() {
-	std::cout << "win2d running" << std::endl;
+	glfwMakeContextCurrent(this->_win2D);
+	int fbw2, fbh2;
+	glfwGetFramebufferSize(this->_win2D, &fbw2, &fbh2);
+	glViewport(0, 0, fbw2, fbh2);
+
+	if (App::g_state.needUpdate) {
+		cv::Mat display = App::g_state.canvas.clone();
+		cv::line(display, cv::Point(AppConstants::DRAW_W / 2, 0), cv::Point(AppConstants::DRAW_W / 2, AppConstants::DRAW_H), cv::Scalar(200, 200, 200), 1);
+		cv::line(display, cv::Point(0, AppConstants::DRAW_H / 2), cv::Point(AppConstants::DRAW_W, AppConstants::DRAW_H / 2), cv::Scalar(200, 200, 200), 1);
+
+		cv::Mat flipped;
+		cv::flip(display, flipped, 0);
+
+		glBindTexture(GL_TEXTURE_2D, App::g_state.tex);
+		glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, AppConstants::DRAW_W, AppConstants::DRAW_H,
+			GL_BGR, GL_UNSIGNED_BYTE, flipped.data);
+
+		App::g_state.needUpdate = false;
+	}
+
+	glClearColor(0.2f, 0.25f, 0.3f, 1.0f);
+	glClear(GL_COLOR_BUFFER_BIT);
+
+	glUseProgram(this->_gProg2D);
+	glUniform1i(glGetUniformLocation(this->_gProg2D, "uTex"), 0);
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, App::g_state.tex);
+
+	glBindVertexArray(App::g_state.quadVAO);
+	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+
+	glfwSwapBuffers(this->_win2D);
 }
 
 GLFWwindow* Window2D::getWindowInstance() {
 	return this->_win2D;
 }
 
-void Window2D::initialize() {
-	this->_win2D = glfwCreateWindow(AppConstants::DRAW_W, AppConstants::DRAW_H, "2D Drawing", nullptr, nullptr);
+void Window2D::initialize(GLFWwindow* win2D = nullptr) {
+	this->_win2D = glfwCreateWindow(AppConstants::DRAW_W, AppConstants::DRAW_H, "2D Drawing", nullptr, win2D);
 	if (!this->_win2D) {
 		std::cerr << "Failed to create 2D window.\n";
 		glfwTerminate();

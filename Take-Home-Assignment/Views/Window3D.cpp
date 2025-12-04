@@ -1,13 +1,94 @@
 #include "window3D.h"
 #include "../App.h"
+#include "../Services/FileService.h"
+#include "../Services/ShaderService.h"
+#include "../Services/PredefinedShapeBuilderService.h"
+#include "../Services/GPUConvertService.h"
+#include "../Models/Mesh.h"
 #include <iostream>
 
 void Window3D::run() {
-	std::cout << "win3d running" << std::endl;
+	float currentFrame = (float)glfwGetTime();
+	this->_gDeltaTime = currentFrame - this->_gLastFrame;
+	this->_gLastFrame = currentFrame;
+
+	glfwMakeContextCurrent(this->_win3D);
+	int fbw3, fbh3;
+	glfwGetFramebufferSize(this->_win3D, &fbw3, &fbh3);
+	glViewport(0, 0, fbw3, fbh3);
+
+	processInput3D(this->_win3D);
+
+	glClearColor(0.1f, 0.12f, 0.15f, 1.0f);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+	glUseProgram(this->_gProg3D);
+
+	glm::mat4 view = glm::lookAt(this->_gCameraPos, this->_gCameraPos + this->_gCameraFront, this->_gCameraUp);
+	glm::mat4 projection = glm::perspective(glm::radians(45.0f),
+		(float)fbw3 / (float)fbh3,
+		0.1f, 100.0f);
+
+	GLint locView = glGetUniformLocation(this->_gProg3D, "view");
+	GLint locProj = glGetUniformLocation(this->_gProg3D, "projection");
+	GLint locModel = glGetUniformLocation(this->_gProg3D, "model");
+	GLint locColor = glGetUniformLocation(this->_gProg3D, "objectColor");
+
+	glUniformMatrix4fv(locView, 1, GL_FALSE, glm::value_ptr(view));
+	glUniformMatrix4fv(locProj, 1, GL_FALSE, glm::value_ptr(projection));
+
+	for (size_t i = 0; i < App::gObjects.size(); ++i) {
+		SceneObject& obj = App::gObjects[i];
+		glm::mat4 model = getObjectModelMatrix(obj);
+		glUniformMatrix4fv(locModel, 1, GL_FALSE, glm::value_ptr(model));
+		glUniform3fv(locColor, 1, glm::value_ptr(obj.color));
+
+		glBindVertexArray(obj.mesh->vao);
+		glDrawElements(GL_TRIANGLES, obj.mesh->indexCount, GL_UNSIGNED_INT, 0);
+	}
+
+	glfwSwapBuffers(this->_win3D);
 }
 
-void Window3D::initialize() {
-	std::cout << "win3d initialized" << std::endl;
+void Window3D::initialize(GLFWwindow* win2D = nullptr) {
+	this->_win3D = glfwCreateWindow(this->_g3DWidth, this->_g3DHeight, "3D Scene", nullptr, win2D);
+	if (!this->_win3D) {
+		std::cerr << "Failed to create 3D window.\n";
+		glfwDestroyWindow(win2D);
+		glfwTerminate();
+		throw "Failed to create 3D window!";
+	}
+
+	glfwMakeContextCurrent(this->_win3D);
+	glfwSetFramebufferSizeCallback(this->_win3D, framebuffer_size_callback_3D);
+	glfwSetMouseButtonCallback(this->_win3D, mouse_button_callback_3D);
+	glfwSetCursorPosCallback(this->_win3D, cursor_position_callback_3D);
+	glfwSetScrollCallback(this->_win3D, scroll_callback_3D);
+	glfwSetKeyCallback(this->_win3D, key_callback_3D);
+
+	glEnable(GL_DEPTH_TEST);
+
+	std::string vsSrcString = FileService::ReadFileContent("./Resources/2dVertShader.vert");
+	std::string fsSrcString = FileService::ReadFileContent("./Resources/2dFragShader.frag");
+
+	this->_gProg3D = ShaderService::createProgram(vsSrcString.c_str(), fsSrcString.c_str());
+
+	// Build predefined meshes & upload
+	Mesh cubeMesh = PredefinedShapeBuilderService::createBoxMesh(0.6f, 0.6f, 0.6f);
+	Mesh cuboidMesh = PredefinedShapeBuilderService::createBoxMesh(1.0f, 0.6f, 0.6f);
+	Mesh sphereMesh = PredefinedShapeBuilderService::createSphereMesh(0.4f, 24, 16);
+	Mesh pyramidMesh = PredefinedShapeBuilderService::createPyramidMesh(0.8f, 0.8f);
+	Mesh pentPrismMesh = PredefinedShapeBuilderService::createPentagonPrismMesh(0.5f, 0.8f);
+
+	App::gCubeMesh = GPUConvertService::uploadMesh(cubeMesh);
+	App::gCuboidMesh = GPUConvertService::uploadMesh(cuboidMesh);
+	App::gSphereMesh = GPUConvertService::uploadMesh(sphereMesh);
+	App::gPyramidMesh = GPUConvertService::uploadMesh(pyramidMesh);
+	App::gPentagonPrismMesh = GPUConvertService::uploadMesh(pentPrismMesh);
+}
+
+GLFWwindow* Window3D::getWindowInstance() {
+	return this->_win3D;
 }
 
 void Window3D::getRayFromMouse(double mouseX, double mouseY, int screenW, int screenH,

@@ -1,7 +1,7 @@
 #pragma once
 #include "../Models/Mesh.h"
 
-class PredefinedShapeBuilderSrevice {
+class PredefinedShapeBuilderService {
 public:
 	static Mesh createBoxMesh(float sx, float sy, float sz);
 	static Mesh createPyramidMesh(float baseSize, float height);

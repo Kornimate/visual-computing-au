@@ -1,8 +1,8 @@
-#include "PredefinedShapeBuilderSrevice.h"
+#include "PredefinedShapeBuilderService.h"
 #include <cmath>
 #include <opencv2/opencv.hpp>
 
-Mesh PredefinedShapeBuilderSrevice::createBoxMesh(float sx, float sy, float sz) {
+Mesh PredefinedShapeBuilderService::createBoxMesh(float sx, float sy, float sz) {
     Mesh m;
     float x = sx * 0.5f;
     float y = sy * 0.5f;
@@ -38,7 +38,7 @@ Mesh PredefinedShapeBuilderSrevice::createBoxMesh(float sx, float sy, float sz) 
     return m;
 }
 
-Mesh PredefinedShapeBuilderSrevice::createPyramidMesh(float baseSize, float height) {
+Mesh PredefinedShapeBuilderService::createPyramidMesh(float baseSize, float height) {
     Mesh m;
     float h = height;
     float b = baseSize * 0.5f;
@@ -75,7 +75,7 @@ Mesh PredefinedShapeBuilderSrevice::createPyramidMesh(float baseSize, float heig
     return m;
 }
 
-Mesh PredefinedShapeBuilderSrevice::createSphereMesh(float radius, int slices, int stacks) {
+Mesh PredefinedShapeBuilderService::createSphereMesh(float radius, int slices, int stacks) {
     Mesh m;
     for (int i = 0; i <= stacks; ++i) {
         float v = (float)i / (float)stacks;
@@ -110,7 +110,7 @@ Mesh PredefinedShapeBuilderSrevice::createSphereMesh(float radius, int slices, i
     return m;
 }
 
-Mesh PredefinedShapeBuilderSrevice::createPentagonPrismMesh(float radius, float height) {
+Mesh PredefinedShapeBuilderService::createPentagonPrismMesh(float radius, float height) {
     Mesh m;
     int n = 5;
     float h = height * 0.5f;
