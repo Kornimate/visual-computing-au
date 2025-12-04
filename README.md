@@ -1,7 +1,7 @@
 # <p align=center>Visual Computing AU</p>
 *<p align=center>Repository for Visual Computing Course in Aarhus University</p>*
 
-### Take-Home Assignment: Controls
+### Take-Home-Assignment: Controls
 1. When 2D window is active (has focus):
   - ```c```: clear canvas
   - ```r```: recognize shape, able to recognize: circle, triangle, square, pentagon, will insert a predefined shape into the 3D space
@@ -19,15 +19,29 @@
   - ```Right Click in edition mode```: rotation with mouse movement
   - ```Left Click in edition mode```: move object with mouse movement
   - ```Shift pressed during movement```: faster camera speed (towards moving)
+  - ```Click on object + scroll```: scale selected object in proportion to scroll
+
+### Take-Home-Assignment: Build the code for Release and Debug versions as well
+0. If you have built it for running only (next paragraph after this) the delete the out folder, make sure cmake and external libraries (`opencv:x64-windows glfw3:x64-windows glad:x64-windows glm:x64-windows`) and `cmake` are installed
+1. Go to the Take-Home-Assignment folder and fill out the missing parts of the command (`<your path to vcpkg>`) and run the following command: `cmake -S . -B build -G "Visual Studio 17 2022" -DCMAKE_TOOLCHAIN_FILE="<your path to vcpkg>/scripts/buildsystems/vcpkg.cmake"
+`
+2. Go to the created build folder and open the Take-Home-Assignment.sln in Visual Studio
+3. Set Take-Home-Assignment as Startup project
+4. Select the build configuration as you wish (Release/Debug) and run the code
 
 
+### Take-Home-Assignment: Build the code just for running: (Debug only)
+0. Use Visual Studio, if you have built it for release as well then nothing to do, as that has debug too
+1. Open the actual Assignment's folder (Take-Home-Assignment) in VS
+2. In CMakeLists.txt change the `set(CMAKE_TOOLCHAIN_FILE "<your vcpkg location>")` to your actual location of vcpkg
+3. Build and Run the project using VS
 
 ### Assignment 2: Build the code for Release and Debug versions as well
-0. If you have built it for running only (next paragraph after this) the delete the out folder, make sure cmake and externa libraries (`opencv:x64-windows glfw3:x64-windows glad:x64-windows glm:x64-windows`) and `cmake` are installed
+0. If you have built it for running only (next paragraph after this) the delete the out folder, make sure cmake and external libraries (`opencv:x64-windows glfw3:x64-windows glad:x64-windows glm:x64-windows`) and `cmake` are installed
 1. Go to the Assignment 2 folder and fill out the missing parts of the command (`<your path to vcpkg>`) and run the following command: `cmake -S . -B build -G "Visual Studio 17 2022" -DCMAKE_TOOLCHAIN_FILE="<your path to vcpkg>/scripts/buildsystems/vcpkg.cmake"
 `
 2. Go to the created build folder and open the Assignment2.sln in Visual Studio
-3. Set Assigment2 as Startup project
+3. Set Assigment 2 as Startup project
 4. Select the build configuration as you wish (Release/Debug) and run the code
 
 
