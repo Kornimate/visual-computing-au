@@ -13,6 +13,7 @@
 #include "../App.h"
 
 Window2D::Window2D() {
+	this->_win2D = nullptr;
 	this->_gProg2D = 0;
 }
 
@@ -55,8 +56,8 @@ GLFWwindow* Window2D::getWindowInstance() {
 	return this->_win2D;
 }
 
-void Window2D::initialize(GLFWwindow* win2D) {
-	this->_win2D = glfwCreateWindow(AppConstants::DRAW_W, AppConstants::DRAW_H, "2D Drawing", nullptr, win2D);
+void Window2D::initialize(GLFWwindow* _) {
+	this->_win2D = glfwCreateWindow(AppConstants::DRAW_W, AppConstants::DRAW_H, "2D Drawing", nullptr, nullptr);
 	if (!this->_win2D) {
 		std::cerr << "Failed to create 2D window.\n";
 		glfwTerminate();
@@ -67,7 +68,7 @@ void Window2D::initialize(GLFWwindow* win2D) {
 	if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
 		std::cerr << "Failed to init GLAD.\n";
 		glfwTerminate();
-		throw "Failed to init GLAD!";
+		throw "Failed to init GLAD.";
 	}
 
 	App::g_state.canvas = cv::Mat(AppConstants::DRAW_H, AppConstants::DRAW_W, CV_8UC3, cv::Scalar(255, 255, 255));
@@ -76,7 +77,7 @@ void Window2D::initialize(GLFWwindow* win2D) {
 	glfwSetCursorPosCallback(this->_win2D, cursor_position_callback);
 	glfwSetKeyCallback(this->_win2D, key_callback_2D);
 
-	std::string vsSrcString = FileService::ReadFileContent("./Resources/2dVertShader.vert");
+	std::string vsSrcString = FileService::ReadFileContent("./Resources/2dVertShader.ver");
 	std::string fsSrcString = FileService::ReadFileContent("./Resources/2dFragShader.frag");
 
 	this->_gProg2D = ShaderService::createProgram(vsSrcString.c_str(), fsSrcString.c_str());

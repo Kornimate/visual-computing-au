@@ -23,21 +23,23 @@ App::~App() {
 }
 
 void App::initialize() {
-	if (!glfwInit()) {
-		std::cerr << "Failed to init GLFW.\n";
-		throw "Error while loading GLFW!";
-	}
+    if (!glfwInit()) {
+        throw "Failed to init GLFW!";
+    }
 
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-	this->_win2d->initialize();
-	this->_win3d->initialize(this->_win2d->getWindowInstance());
+    // 1. Create the FIRST window (2D)
+    this->_win2d->initialize();
 
-	// Back to 2D window as initial context
+    // 3. Create the 3D window and share context with 2D
+    this->_win3d->initialize(this->_win2d->getWindowInstance());
+
 	glfwMakeContextCurrent(this->_win2d->getWindowInstance());
 }
+
 
 void App::run() {
 

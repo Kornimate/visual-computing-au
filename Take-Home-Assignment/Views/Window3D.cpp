@@ -98,7 +98,7 @@ void Window3D::initialize(GLFWwindow* win2D) {
 
 	glEnable(GL_DEPTH_TEST);
 
-	std::string vsSrcString = FileService::ReadFileContent("./Resources/3dVertShader.vert");
+	std::string vsSrcString = FileService::ReadFileContent("./Resources/3dVertShader.ver");
 	std::string fsSrcString = FileService::ReadFileContent("./Resources/3dFragShader.frag");
 
 	this->_gProg3D = ShaderService::createProgram(vsSrcString.c_str(), fsSrcString.c_str());
