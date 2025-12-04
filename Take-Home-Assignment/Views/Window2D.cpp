@@ -1,6 +1,7 @@
 #include "window2D.h"
 #include <cmath>
 #include <vector>
+#include <iostream>
 #include "../Models/Constants.h"
 #include "../Models/DetectedShape.h"
 #include "../Models/GLMesh.h"
@@ -160,6 +161,11 @@ void Window2D::key_callback_2D(GLFWwindow* window, int key, int scancode, int ac
 		App::g_state.canvas.setTo(cv::Scalar(255, 255, 255));
 		App::g_state.needUpdate = true;
 		std::cout << "Canvas cleared.\n";
+		return;
+	}
+
+	if (App::gObjects.size() == 999 || App::gDynamicMeshes.size() == 999) {
+		std::cerr << "Objects number reached maximium: 999" << std::endl;
 		return;
 	}
 
