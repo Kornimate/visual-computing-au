@@ -55,7 +55,7 @@ GLFWwindow* Window2D::getWindowInstance() {
 	return this->_win2D;
 }
 
-void Window2D::initialize(GLFWwindow* win2D = nullptr) {
+void Window2D::initialize(GLFWwindow* win2D) {
 	this->_win2D = glfwCreateWindow(AppConstants::DRAW_W, AppConstants::DRAW_H, "2D Drawing", nullptr, win2D);
 	if (!this->_win2D) {
 		std::cerr << "Failed to create 2D window.\n";

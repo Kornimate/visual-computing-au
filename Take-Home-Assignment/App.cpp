@@ -1,6 +1,16 @@
 #include "app.h"
 #include "Models/Constants.h"
 
+AppState App::g_state;
+
+GLMesh App::gCubeMesh;
+GLMesh App::gCuboidMesh;
+GLMesh App::gSphereMesh;
+GLMesh App::gPyramidMesh;
+GLMesh App::gPentagonPrismMesh;
+std::vector<GLMesh> App::gDynamicMeshes;   // meshes created from extrusion / revolution
+std::vector<SceneObject> App::gObjects;
+
 App::App(Window* win2d, Window* win3d) : _win2d(win2d), _win3d(win3d) {}
 
 App::~App() {

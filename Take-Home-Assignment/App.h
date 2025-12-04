@@ -1,8 +1,8 @@
 #pragma once
-#include "Views/window2D.h"
-#include "Views/window3D.h"
 #include "Models/GLMesh.h"
 #include "Models/SceneObject.h"
+#include "Views/window2D.h"
+#include "Views/window3D.h"
 
 class App {
 private:

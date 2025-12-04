@@ -1,8 +1,8 @@
 #pragma once
-#include "window.h"
 #include "../Models/AppState.h"
 #include "../Models/SceneObject.h"
 #include <glm/glm.hpp>
+#include "window.h"
 
 class Window2D : public Window {
 public:

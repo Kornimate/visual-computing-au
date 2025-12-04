@@ -1,15 +1,16 @@
 #pragma once
-#include "window.h"
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include "../Models/SceneObject.h"
 #include "../Models/Constants.h"
+#include "window.h"
 
 class Window;
 
 class Window3D : public Window {
 public:
+	Window3D();
 	void run();
 	void initialize(GLFWwindow* win2D = nullptr);
 	GLFWwindow* getWindowInstance();
@@ -20,38 +21,38 @@ public:
 	static bool rayIntersectsObject(const SceneObject& obj, const glm::vec3& rayOrigin, const glm::vec3& rayDir, float& tHit);
 	
 	void processInput3D(GLFWwindow* window);
-	void framebuffer_size_callback_3D(GLFWwindow* window, int width, int height);
-	void key_callback_3D(GLFWwindow* window, int key, int scancode, int action, int mods);
-	void mouse_button_callback_3D(GLFWwindow* window, int button, int action, int mods);
-	void cursor_position_callback_3D(GLFWwindow* window, double xpos, double ypos);
-	void scroll_callback_3D(GLFWwindow* window, double xoffset, double yoffset);
+	static void framebuffer_size_callback_3D(GLFWwindow* window, int width, int height);
+	static void key_callback_3D(GLFWwindow* window, int key, int scancode, int action, int mods);
+	static void mouse_button_callback_3D(GLFWwindow* window, int button, int action, int mods);
+	static void cursor_position_callback_3D(GLFWwindow* window, double xpos, double ypos);
+	static void scroll_callback_3D(GLFWwindow* window, double xoffset, double yoffset);
 
 private:
 	GLFWwindow* _win3D;
-	GLuint _gProg3D = 0;
+	GLuint _gProg3D;
 
-	float _gDeltaTime = 0.0f;
-	float _gLastFrame = 0.0f;
+	static float _gDeltaTime;
+	static float _gLastFrame;
 
-	glm::vec3 _gCameraPos = glm::vec3(0.0f, 0.0f, 6.0f);
-	glm::vec3 _gCameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
-	glm::vec3 _gCameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
+	static glm::vec3 _gCameraPos;
+	static glm::vec3 _gCameraFront;
+	static glm::vec3 _gCameraUp;
 
-	float _gYaw = -90.0f;
-	float _gPitch = 0.0f;
+	static float _gYaw;
+	static float _gPitch;
 
-	bool  _gTransformMode = false;
-	bool  _gLeftMouseDown = false;
-	bool  _gRightMouseDown = false;
-	bool  _gIsDraggingObject = false;
-	bool  _gFirstMouse3D = true;
-	float _gLastX3D = 400.0f;
-	float _gLastY3D = 300.0f;
-	int   _g3DWidth = AppConstants::DRAW_W;
-	int   _g3DHeight = AppConstants::DRAW_H;
+	static bool _gTransformMode;
+	static bool _gLeftMouseDown;
+	static bool _gRightMouseDown;
+	static bool _gIsDraggingObject;
+	static bool _gFirstMouse3D;
+	static float _gLastX3D;
+	static float _gLastY3D;
+	static int _g3DWidth;
+	static int _g3DHeight;
 
-	int   _gSelectedObject = -1;
-	glm::vec3 _gDragPlanePoint = glm::vec3(0.0f);
-	glm::vec3 _gDragPlaneNormal = glm::vec3(0.0f, 0.0f, -1.0f);
-	bool  _gHasDragPlane = false;
+	static int _gSelectedObject;
+	static glm::vec3 _gDragPlanePoint;
+	static glm::vec3 _gDragPlaneNormal;
+	static bool _gHasDragPlane;
 };

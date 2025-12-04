@@ -7,6 +7,36 @@
 #include "../Models/Mesh.h"
 #include <iostream>
 
+float Window3D::_gDeltaTime = 0.0f;
+float Window3D::_gLastFrame = 0.0f;
+
+glm::vec3 Window3D::_gCameraPos = glm::vec3(0.0f, 0.0f, 6.0f);
+glm::vec3 Window3D::_gCameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
+glm::vec3 Window3D::_gCameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
+
+float Window3D::_gYaw = -90.0f;
+float Window3D::_gPitch = 0.0f;
+
+bool Window3D::_gTransformMode = false;
+bool Window3D::_gLeftMouseDown = false;
+bool Window3D::_gRightMouseDown = false;
+bool Window3D::_gIsDraggingObject = false;
+bool Window3D::_gFirstMouse3D = true;
+float Window3D::_gLastX3D = 400.0f;
+float Window3D::_gLastY3D = 300.0f;
+int Window3D::_g3DWidth = AppConstants::DRAW_W;
+int Window3D::_g3DHeight = AppConstants::DRAW_H;
+
+int Window3D::_gSelectedObject = -1;
+glm::vec3 Window3D::_gDragPlanePoint = glm::vec3(0.0f);
+glm::vec3 Window3D::_gDragPlaneNormal = glm::vec3(0.0f, 0.0f, -1.0f);
+bool Window3D::_gHasDragPlane = false;
+
+Window3D::Window3D() {
+	this->_win3D = nullptr;
+	this->_gProg3D = 0;
+}
+
 void Window3D::run() {
 	float currentFrame = (float)glfwGetTime();
 	this->_gDeltaTime = currentFrame - this->_gLastFrame;
@@ -50,8 +80,8 @@ void Window3D::run() {
 	glfwSwapBuffers(this->_win3D);
 }
 
-void Window3D::initialize(GLFWwindow* win2D = nullptr) {
-	this->_win3D = glfwCreateWindow(this->_g3DWidth, this->_g3DHeight, "3D Scene", nullptr, win2D);
+void Window3D::initialize(GLFWwindow* win2D) {
+	this->_win3D = glfwCreateWindow(this->_g3DWidth, this->_g3DHeight, "3D Sandbox", nullptr, win2D);
 	if (!this->_win3D) {
 		std::cerr << "Failed to create 3D window.\n";
 		glfwDestroyWindow(win2D);
@@ -68,8 +98,8 @@ void Window3D::initialize(GLFWwindow* win2D = nullptr) {
 
 	glEnable(GL_DEPTH_TEST);
 
-	std::string vsSrcString = FileService::ReadFileContent("./Resources/2dVertShader.vert");
-	std::string fsSrcString = FileService::ReadFileContent("./Resources/2dFragShader.frag");
+	std::string vsSrcString = FileService::ReadFileContent("./Resources/3dVertShader.vert");
+	std::string fsSrcString = FileService::ReadFileContent("./Resources/3dFragShader.frag");
 
 	this->_gProg3D = ShaderService::createProgram(vsSrcString.c_str(), fsSrcString.c_str());
 
@@ -175,17 +205,17 @@ void Window3D::processInput3D(GLFWwindow* window) {
 
 void Window3D::framebuffer_size_callback_3D(GLFWwindow* window, int width, int height) {
 	(void)window;
-	this->_g3DWidth = width;
-	this->_g3DHeight = height;
+	Window3D::_g3DWidth = width;
+	Window3D::_g3DHeight = height;
 	glViewport(0, 0, width, height);
 }
 
 void Window3D::key_callback_3D(GLFWwindow* window, int key, int scancode, int action, int mods) {
 	(void)window; (void)scancode; (void)mods;
 	if (key == GLFW_KEY_T && action == GLFW_PRESS) {
-		this->_gTransformMode = !this->_gTransformMode;
+		Window3D::_gTransformMode = !Window3D::_gTransformMode;
 		glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-		if (this->_gTransformMode) std::cout << "Mode: OBJECT TRANSFORM (click objects)\n";
+		if (Window3D::_gTransformMode) std::cout << "Mode: OBJECT TRANSFORM (click objects)\n";
 		else std::cout << "Mode: CAMERA\n";
 	}
 }
@@ -193,13 +223,13 @@ void Window3D::key_callback_3D(GLFWwindow* window, int key, int scancode, int ac
 void Window3D::mouse_button_callback_3D(GLFWwindow* window, int button, int action, int mods) {
 	(void)mods;
 
-	if (this->_gTransformMode) {
+	if (Window3D::_gTransformMode) {
 		if (action == GLFW_PRESS) {
-			glm::mat4 projection = glm::perspective(glm::radians(45.0f), (float)this->_g3DWidth / (float)this->_g3DHeight, 0.1f, 100.0f);
-			glm::mat4 view = glm::lookAt(this->_gCameraPos, this->_gCameraPos + this->_gCameraFront, this->_gCameraUp);
+			glm::mat4 projection = glm::perspective(glm::radians(45.0f), (float)Window3D::_g3DWidth / (float)Window3D::_g3DHeight, 0.1f, 100.0f);
+			glm::mat4 view = glm::lookAt(Window3D::_gCameraPos, Window3D::_gCameraPos + Window3D::_gCameraFront, Window3D::_gCameraUp);
 
 			glm::vec3 rayOrg, rayDir;
-			getRayFromMouse(this->_gLastX3D, this->_gLastY3D, this->_g3DWidth, this->_g3DHeight, projection, view, rayOrg, rayDir);
+			getRayFromMouse(Window3D::_gLastX3D, Window3D::_gLastY3D, Window3D::_g3DWidth, Window3D::_g3DHeight, projection, view, rayOrg, rayDir);
 
 			float closestDist = std::numeric_limits<float>::max();
 			int hitIndex = -1;
@@ -215,29 +245,29 @@ void Window3D::mouse_button_callback_3D(GLFWwindow* window, int button, int acti
 			}
 
 			if (hitIndex != -1) {
-				this->_gSelectedObject = hitIndex;
-				this->_gIsDraggingObject = true;
+				Window3D::_gSelectedObject = hitIndex;
+				Window3D::_gIsDraggingObject = true;
 				if (button == GLFW_MOUSE_BUTTON_LEFT) {
-					this->_gLeftMouseDown = true;
-					this->_gDragPlanePoint = App::gObjects[hitIndex].position;
-					this->_gDragPlaneNormal = glm::normalize(this->_gCameraFront);
-					this->_gHasDragPlane = true;
+					Window3D::_gLeftMouseDown = true;
+					Window3D::_gDragPlanePoint = App::gObjects[hitIndex].position;
+					Window3D::_gDragPlaneNormal = glm::normalize(Window3D::_gCameraFront);
+					Window3D::_gHasDragPlane = true;
 				}
 				if (button == GLFW_MOUSE_BUTTON_RIGHT) {
-					this->_gRightMouseDown = true;
+					Window3D::_gRightMouseDown = true;
 				}
-				std::cout << "Selected object #" << this->_gSelectedObject << "\n";
+				std::cout << "Selected object #" << Window3D::_gSelectedObject << "\n";
 			}
 			else {
-				this->_gIsDraggingObject = false;
-				this->_gSelectedObject = -1;
-				this->_gHasDragPlane = false;
+				Window3D::_gIsDraggingObject = false;
+				Window3D::_gSelectedObject = -1;
+				Window3D::_gHasDragPlane = false;
 			}
 		}
 		else if (action == GLFW_RELEASE) {
-			if (button == GLFW_MOUSE_BUTTON_LEFT)  this->_gLeftMouseDown = false;
-			if (button == GLFW_MOUSE_BUTTON_RIGHT) this->_gRightMouseDown = false;
-			this->_gIsDraggingObject = false;
+			if (button == GLFW_MOUSE_BUTTON_LEFT)  Window3D::_gLeftMouseDown = false;
+			if (button == GLFW_MOUSE_BUTTON_RIGHT) Window3D::_gRightMouseDown = false;
+			Window3D::_gIsDraggingObject = false;
 		}
 	}
 	else {
@@ -253,33 +283,33 @@ void Window3D::mouse_button_callback_3D(GLFWwindow* window, int button, int acti
 void Window3D::cursor_position_callback_3D(GLFWwindow* window, double xpos, double ypos) {
 	(void)window;
 
-	if (this->_gFirstMouse3D) {
-		this->_gLastX3D = (float)xpos;
-		this->_gLastY3D = (float)ypos;
-		this->_gFirstMouse3D = false;
+	if (Window3D::_gFirstMouse3D) {
+		Window3D::_gLastX3D = (float)xpos;
+		Window3D::_gLastY3D = (float)ypos;
+		Window3D::_gFirstMouse3D = false;
 	}
 
-	float xoffset = (float)xpos - this->_gLastX3D;
-	float yoffset = this->_gLastY3D - (float)ypos;
-	this->_gLastX3D = (float)xpos;
-	this->_gLastY3D = (float)ypos;
+	float xoffset = (float)xpos - Window3D::_gLastX3D;
+	float yoffset = Window3D::_gLastY3D - (float)ypos;
+	Window3D::_gLastX3D = (float)xpos;
+	Window3D::_gLastY3D = (float)ypos;
 
-	if (this->_gTransformMode && this->_gIsDraggingObject &&
-		this->_gSelectedObject >= 0 && this->_gSelectedObject < (int)App::gObjects.size()) {
+	if (Window3D::_gTransformMode && Window3D::_gIsDraggingObject &&
+		Window3D::_gSelectedObject >= 0 && Window3D::_gSelectedObject < (int)App::gObjects.size()) {
 
-		SceneObject& obj = App::gObjects[this->_gSelectedObject];
+		SceneObject& obj = App::gObjects[Window3D::_gSelectedObject];
 		float rotationSensitivity = 0.5f;
 
-		if (this->_gLeftMouseDown && this->_gHasDragPlane) {
-			glm::mat4 projection = glm::perspective(glm::radians(45.0f), (float)this->_g3DWidth / (float)this->_g3DHeight, 0.1f, 100.0f);
-			glm::mat4 view = glm::lookAt(this->_gCameraPos, this->_gCameraPos + this->_gCameraFront, this->_gCameraUp);
+		if (Window3D::_gLeftMouseDown && Window3D::_gHasDragPlane) {
+			glm::mat4 projection = glm::perspective(glm::radians(45.0f), (float)Window3D::_g3DWidth / (float)Window3D::_g3DHeight, 0.1f, 100.0f);
+			glm::mat4 view = glm::lookAt(Window3D::_gCameraPos, Window3D::_gCameraPos + Window3D::_gCameraFront, Window3D::_gCameraUp);
 
 			glm::vec3 rayOrg, rayDir;
-			getRayFromMouse(this->_gLastX3D, this->_gLastY3D, this->_g3DWidth, this->_g3DHeight, projection, view, rayOrg, rayDir);
+			getRayFromMouse(Window3D::_gLastX3D, Window3D::_gLastY3D, Window3D::_g3DWidth, Window3D::_g3DHeight, projection, view, rayOrg, rayDir);
 
-			float denom = glm::dot(rayDir, this->_gDragPlaneNormal);
+			float denom = glm::dot(rayDir, Window3D::_gDragPlaneNormal);
 			if (std::fabs(denom) > 1e-6f) {
-				float t = glm::dot((this->_gDragPlanePoint - rayOrg), this->_gDragPlaneNormal) / denom;
+				float t = glm::dot((Window3D::_gDragPlanePoint - rayOrg), Window3D::_gDragPlaneNormal) / denom;
 				if (t > 0.0f) {
 					glm::vec3 hitPoint = rayOrg + t * rayDir;
 					obj.position = hitPoint;
@@ -287,33 +317,33 @@ void Window3D::cursor_position_callback_3D(GLFWwindow* window, double xpos, doub
 			}
 		}
 
-		if (this->_gRightMouseDown) {
+		if (Window3D::_gRightMouseDown) {
 			obj.rotation.y += xoffset * rotationSensitivity;
 			obj.rotation.x += yoffset * rotationSensitivity;
 		}
 
 	}
-	else if (!this->_gTransformMode) {
+	else if (!Window3D::_gTransformMode) {
 		if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS) {
 			float sensitivity = 0.1f;
 			xoffset *= sensitivity;
 			yoffset *= sensitivity;
-			this->_gYaw += xoffset;
-			this->_gPitch += yoffset;
-			if (this->_gPitch > 89.0f)  this->_gPitch = 89.0f;
-			if (this->_gPitch < -89.0f) this->_gPitch = -89.0f;
+			Window3D::_gYaw += xoffset;
+			Window3D::_gPitch += yoffset;
+			if (Window3D::_gPitch > 89.0f)  Window3D::_gPitch = 89.0f;
+			if (Window3D::_gPitch < -89.0f) Window3D::_gPitch = -89.0f;
 
 			glm::vec3 front;
-			front.x = cos(glm::radians(this->_gYaw)) * cos(glm::radians(this->_gPitch));
-			front.y = sin(glm::radians(this->_gPitch));
-			front.z = sin(glm::radians(this->_gYaw)) * cos(glm::radians(this->_gPitch));
-			this->_gCameraFront = glm::normalize(front);
+			front.x = cos(glm::radians(Window3D::_gYaw)) * cos(glm::radians(Window3D::_gPitch));
+			front.y = sin(glm::radians(Window3D::_gPitch));
+			front.z = sin(glm::radians(Window3D::_gYaw)) * cos(glm::radians(Window3D::_gPitch));
+			Window3D::_gCameraFront = glm::normalize(front);
 		}
 		if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_MIDDLE) == GLFW_PRESS) {
 			float panSpeed = 0.05f;
-			glm::vec3 cameraRight = glm::normalize(glm::cross(this->_gCameraFront, this->_gCameraUp));
-			this->_gCameraPos -= cameraRight * xoffset * panSpeed;
-			this->_gCameraPos -= this->_gCameraUp * yoffset * panSpeed;
+			glm::vec3 cameraRight = glm::normalize(glm::cross(Window3D::_gCameraFront, Window3D::_gCameraUp));
+			Window3D::_gCameraPos -= cameraRight * xoffset * panSpeed;
+			Window3D::_gCameraPos -= Window3D::_gCameraUp * yoffset * panSpeed;
 		}
 	}
 }
@@ -321,15 +351,15 @@ void Window3D::cursor_position_callback_3D(GLFWwindow* window, double xpos, doub
 void Window3D::scroll_callback_3D(GLFWwindow* window, double xoffset, double yoffset) {
 	(void)window; (void)xoffset;
 
-	if (this->_gTransformMode) {
-		if (this->_gSelectedObject >= 0 && this->_gSelectedObject < (int)App::gObjects.size()) {
-			SceneObject& obj = App::gObjects[this->_gSelectedObject];
+	if (Window3D::_gTransformMode) {
+		if (Window3D::_gSelectedObject >= 0 && Window3D::_gSelectedObject < (int)App::gObjects.size()) {
+			SceneObject& obj = App::gObjects[Window3D::_gSelectedObject];
 
-			glm::mat4 projection = glm::perspective(glm::radians(45.0f), (float)this->_g3DWidth / (float)this->_g3DHeight, 0.1f, 100.0f);
-			glm::mat4 view = glm::lookAt(this->_gCameraPos, this->_gCameraPos + this->_gCameraFront, this->_gCameraUp);
+			glm::mat4 projection = glm::perspective(glm::radians(45.0f), (float)Window3D::_g3DWidth / (float)Window3D::_g3DHeight, 0.1f, 100.0f);
+			glm::mat4 view = glm::lookAt(Window3D::_gCameraPos, Window3D::_gCameraPos + Window3D::_gCameraFront, Window3D::_gCameraUp);
 
 			glm::vec3 rayOrg, rayDir;
-			getRayFromMouse(this->_gLastX3D, this->_gLastY3D, this->_g3DWidth, this->_g3DHeight, projection, view, rayOrg, rayDir);
+			getRayFromMouse(Window3D::_gLastX3D, Window3D::_gLastY3D, Window3D::_g3DWidth, Window3D::_g3DHeight, projection, view, rayOrg, rayDir);
 
 			float t;
 			if (rayIntersectsObject(obj, rayOrg, rayDir, t)) {
@@ -341,6 +371,6 @@ void Window3D::scroll_callback_3D(GLFWwindow* window, double xoffset, double yof
 	}
 	else {
 		float zoomSpeed = 1.0f;
-		this->_gCameraPos += this->_gCameraFront * (float)yoffset * zoomSpeed;
+		Window3D::_gCameraPos += Window3D::_gCameraFront * (float)yoffset * zoomSpeed;
 	}
 }
